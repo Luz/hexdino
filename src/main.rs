@@ -14,10 +14,9 @@ fn main() {
     let mut buffer = vec![];
     let mut cursorpos:usize = 0;
     const SPALTEN:usize = 16;
-    let mut screenheight;
 
     initscr(); //start ncursesw
-    screenheight = to_usize(getmaxy(stdscr));
+    let screenheight : usize = getmaxy(stdscr) as usize;
     cbreak();  //ctrl+z and fg works with this
     noecho();
     start_color();
