@@ -14,6 +14,9 @@ fn main() {
     let mut buffer = vec![];
     let mut cursorpos:usize = 0;
     const SPALTEN:usize = 16;
+//    let mut command = vec![]; // If command is typed by user, store it
+//    command.push(":asdf");
+    let mut command = String::new();
 
     initscr(); //start ncursesw
     let screenheight : usize = getmaxy(stdscr) as usize;
@@ -78,18 +81,19 @@ fn main() {
 
 //    file.read_to_end(&mut buffer).ok().expect("File could not be read.");
     file.read_to_end(&mut buffer).ok().expect("File could not be read.");
-    draw(&buffer, cursorpos, SPALTEN, screenheight);
+
+    let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, TODO 3 Insert
+
+    draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command);
 
     let mut key;
-    let mut mode = 0; // 0 Command mode, 1 Insert mode
-
 //    key = getch();
 //    printw(&format!("{:?}", key));
 
     let mut ragequitnow = 0;
     while ragequitnow == 0 {
         key = getch();
-        if mode == 0 {
+        if mode == 0 { // movement mode
             match key {
                 104 => if cursorpos != 0 {cursorpos-=1}, //left is "-1"
                 106 => if cursorpos+SPALTEN < buffer.len() {cursorpos+=SPALTEN} //down is "+16"
@@ -99,34 +103,42 @@ fn main() {
                  48 => cursorpos -= cursorpos%16, //start of line is "to start"
                  36 => if cursorpos-(cursorpos%16)+(SPALTEN-1) < buffer.len() {cursorpos = cursorpos-(cursorpos%16)+(SPALTEN-1)} //dollar is "to end"
                         else {cursorpos = buffer.len()-1},
-                114 => mode = 1, //r replaces the char
+                114 => mode = 1, //r replaces the next char
                  27 => ragequitnow = 1, // TODO replace by KEY_...?
-                 58 => (), //TODO doppelpunkt, befehlsmodus! screenheight;
+                 58 => mode = 2, //TODO use screenheight;
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
                 _ => (),
             }
-        } else {
+        } else
+        if mode == 1 { // r was pressed so replace next char
             match key {
                 c @ 32...126 => { buffer[cursorpos] = c as u8; mode = 0 },
                 27 => mode = 0,
                 _ => (),
             }
+        } else
+        if mode == 2 {
+            match key {
+                c @ 32...126 => { command.push(c as u8 as char); }, //TODO check this
+                27 => {command.clear();mode = 0;},
+                _ => (),
+            }
         }
  //       printw(&format!("{:?}", key));
-        draw(&buffer, cursorpos, SPALTEN, screenheight);
+        draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command);
     }
 
     refresh();
     endwin();
 }
 
-fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize) {
+fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:usize, command:&String) {
 //    let zeilen = buffer.len() / spalten;
     erase();
 
     let mut zeilen = buffer.len() / spalten;
-    if zeilen >= maxzeilen {
-        zeilen = maxzeilen-1;
+    if zeilen >= maxzeilen-1 { // Last line reserved for Status/Commands/etc (Like in vim)
+        zeilen = maxzeilen-2;
     }
 
     for z in 0 .. zeilen+1 {
@@ -147,4 +159,10 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize) {
         }
         printw("\n");
     }
+//TODO: use maxzeilen to draw the command (if in mode == 2) on last line of terminal
+//show that the mode is 2 by adding a ':'
+    if mode == 2 {
+        printw(":");
+    }
+    printw(&format!("{}", command));
 }
