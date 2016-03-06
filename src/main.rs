@@ -1,5 +1,6 @@
 use std::io::prelude::*;
-use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::SeekFrom;
 use std::path::Path;
 use std::error::Error;
 use std::env;
@@ -72,7 +73,7 @@ fn main() {
 
 //TODO in this order: 1)disp files 2) hjkl movement 3) edit file by 'r' 4) save file 5) edit file by 'x, i' 6) search by '/'
 
-    let mut file = match File::open(&path) {
+    let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
 //        Err(why) => printw("oh... file not opened..."),
         Err(why) => panic!("couldn't open {}: {}", display,
             Error::description(&why)),
@@ -105,7 +106,7 @@ fn main() {
                         else {cursorpos = buffer.len()-1},
                 114 => mode = 1, //r replaces the next char
                  27 => ragequitnow = 1, // TODO replace by KEY_...?
-                 58 => mode = 2, //TODO use screenheight;
+                 58 => mode = 2, // ":" TODO use screenheight;
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
                 _ => (),
             }
@@ -121,6 +122,13 @@ fn main() {
             match key {
                 c @ 32...126 => { command.push(c as u8 as char); }, //TODO check this
                 27 => {command.clear();mode = 0;},
+                10 => { // Enter pressed, compute command!
+                        if command == "w".to_string() {
+                            file.seek(SeekFrom::Start(0)).ok().expect("Filepointer could not be set to 0");
+                            file.write_all(&mut buffer).ok().expect("File could not be written.");
+                            mode = 0;
+                        }
+                    },
                 _ => (),
             }
         }
