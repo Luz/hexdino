@@ -163,7 +163,13 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
         for s in 0 .. spalten {
             if z*spalten+s == cursorpos { attron(COLOR_PAIR(1)); }
                 if z*spalten+s < buffer.len() {
-                    if let c @ 32...126 = buffer[z*spalten+s] {printw(&format!("{}", c as char) );}
+                    if let c @ 32...126 = buffer[z*spalten+s] {
+                        if c as char == '%' {
+                            printw("%%"); // '%' needs to be escaped by a '%' in ncurses
+                        } else {
+                            printw(&format!("{}", c as char) );
+                        }
+                    }
                     else {printw(&format!(".") );}
                 }
             if z*spalten+s == cursorpos { attroff(COLOR_PAIR(1)); }
