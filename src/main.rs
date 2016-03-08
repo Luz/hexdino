@@ -105,7 +105,8 @@ fn main() {
                  36 => if cursorpos-(cursorpos%16)+(SPALTEN-1) < buffer.len() {cursorpos = cursorpos-(cursorpos%16)+(SPALTEN-1)} //dollar is "to end"
                         else {cursorpos = buffer.len()-1},
                 114 => mode = 1, //r replaces the next char
-                 58 => mode = 2, // ":" TODO use screenheight;
+                 58 => {mode = 2; // ":" TODO use screenheight;
+                            command.clear();},
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
                 _ => (),
             }
@@ -125,12 +126,19 @@ fn main() {
                         if (command == "w".to_string()) || (command == "wq".to_string()) {
                             file.seek(SeekFrom::Start(0)).ok().expect("Filepointer could not be set to 0");
                             file.write_all(&mut buffer).ok().expect("File could not be written.");
-                            mode = 0;
+                            if command == "wq".to_string() {
+                                ragequitnow = 1;
+                            }
+                            command.clear();mode = 0;
                         }
-                        if (command == "wq".to_string()) || (command == "q".to_string()) {
+                        else if command == "q".to_string() {
                             ragequitnow = 1;
                         }
-
+                        else {
+                            command.clear();
+                            command.push_str("Bad_command!");
+                            mode = 0;
+                        }
                     },
                 _ => (),
             }
