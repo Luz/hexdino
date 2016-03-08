@@ -161,13 +161,15 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
     }
 
     for z in 0 .. zeilen+1 {
+        printw(&format!("{:08X}: ", z * spalten )); // 8 hex digits (4GB/spalten or 0.25GB@spalten=16)
+        printw(" "); // Additional space between line number and hex
         for s in 0 .. spalten {
             if z*spalten+s == cursorpos { attron(COLOR_PAIR(1)); }
             if z*spalten+s < buffer.len() { printw(&format!("{:02X} ", buffer[z*spalten+s]) ); }
                 else {printw("-- "); }
             if z*spalten+s == cursorpos { attroff(COLOR_PAIR(1)); }
         }
-        printw(" "); // Space between hex and ascii
+        printw(" "); // Additional space between hex and ascii
         for s in 0 .. spalten {
             if z*spalten+s == cursorpos { attron(COLOR_PAIR(1)); }
                 if z*spalten+s < buffer.len() {
