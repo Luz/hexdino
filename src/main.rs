@@ -15,8 +15,6 @@ fn main() {
     let mut buffer = vec![];
     let mut cursorpos:usize = 0;
     const SPALTEN:usize = 16;
-//    let mut command = vec![]; // If command is typed by user, store it
-//    command.push(":asdf");
     let mut command = String::new();
 
     initscr(); //start ncursesw
@@ -53,9 +51,10 @@ fn main() {
     };*/
 
     let path = if args.len() > 1 {
-        printw(&format!("Opening file {} (TODO)", args[1]));
+        printw(&format!("Opening file {}", args[1]));
         args[1].clone()
     } else {
+        printw(&format!("No file specified. Trying to open foo.txt"));
         "foo.txt".into()
     };
 
@@ -74,13 +73,11 @@ fn main() {
 //TODO in this order: 1)disp files 2) hjkl movement 3) edit file by 'r' 4) save file 5) edit file by 'x, i' 6) search by '/'
 
     let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
-//        Err(why) => printw("oh... file not opened..."),
         Err(why) => panic!("couldn't open {}: {}", display,
             Error::description(&why)),
         Ok(file) => file,
     };
 
-//    file.read_to_end(&mut buffer).ok().expect("File could not be read.");
     file.read_to_end(&mut buffer).ok().expect("File could not be read.");
 
     let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, TODO 3 Insert
@@ -105,7 +102,7 @@ fn main() {
                  36 => if cursorpos-(cursorpos%16)+(SPALTEN-1) < buffer.len() {cursorpos = cursorpos-(cursorpos%16)+(SPALTEN-1)} //dollar is "to end"
                         else {cursorpos = buffer.len()-1},
                 114 => mode = 1, //r replaces the next char
-                 58 => {mode = 2; // ":" TODO use screenheight;
+                 58 => {mode = 2; // ":"
                             command.clear();},
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
                 _ => (),
@@ -143,7 +140,6 @@ fn main() {
                 _ => (),
             }
         }
- //       printw(&format!("{:?}", key));
         draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command);
     }
 
@@ -186,10 +182,9 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
         }
         printw("\n");
     }
-//TODO: use maxzeilen to draw the command (if in mode == 2) on last line of terminal
-//show that the mode is 2 by adding a ':'
     if mode == 2 {
-        printw(":");
+        printw(":"); // Indicate that a command can be typed in
+        //TODO: use (screenheight) maxzeilen to draw the command on last line of terminal
     }
     printw(&format!("{}", command));
 }
