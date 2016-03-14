@@ -1,3 +1,6 @@
+//! # Hexdino
+//!
+//! A hex editor with vim like keybindings written in Rust.
 use std::io::prelude::*;
 use std::fs::OpenOptions;
 use std::io::SeekFrom;
