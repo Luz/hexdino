@@ -2,7 +2,7 @@
 //!
 //! A hex editor with vim like keybindings written in Rust.
 
-#![doc(html_logo_url = "https://raw.githubusercontent.com/dbrgn/hexdino/master/logo.svg")]
+#![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 
 use std::io::prelude::*;
 use std::fs::OpenOptions;
