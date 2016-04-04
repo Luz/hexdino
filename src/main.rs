@@ -129,26 +129,28 @@ fn main() {
         } else
         if mode == 1 && cursorstate == 2 { // r was pressed so replace next char in ascii mode
             match key {
-                c @ 32...126 => { buffer[cursorpos] = c as u8; mode = 0 },
-                27 => mode = 0,
+                c @ 32...126 => { buffer[cursorpos] = c as u8 },
                 _ => (),
             }
+            mode = 0;
         } else
         if mode == 1 && cursorstate == 0 {
-            match key {
-                c @ 65...90 => { () },
-                c @ 97...122 => { () },
-                27 => mode = 0,
+            match key { // Change left nibble
+                c @  65... 70 => { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 55)<<4 }, //A-F
+                c @  97...102 => { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 55)<<4 }, //a-f
+                c @  48... 57 => { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 48)<<4 }, //0-9
                 _ => ()
             }
+            mode = 0;
         } else
         if mode == 1 && cursorstate == 1 {
-            match key {
-                c @ 65...90 => { () },
-                c @ 97...122 => { () },
-                27 => mode = 0,
+            match key { // Chnage right nibble
+                c @  65... 70 => { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55)<<0 }, //A-F
+                c @  97...102 => { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55)<<0 }, //a-f
+                c @  48... 57 => { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 48)<<0 }, //0-9
                 _ => ()
             }
+            mode = 0;
         } else
         if mode == 2 {
             match key {
