@@ -121,6 +121,8 @@ fn main() {
                     cursorstate = 1;
                 },
                 114 => mode = 1, //r replaces the next char
+                120 => {buffer.remove(cursorpos);}, //x remove the next char
+                105 => {buffer.insert(cursorpos, 0x00);},
                  58 => {mode = 2; // ":"
                             command.clear();},
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
