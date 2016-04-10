@@ -226,9 +226,11 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
         }
         printw("\n");
     }
+    for _ in 0 .. maxzeilen-zeilen-2 {
+        printw("\n"); // Put the cursor on last line of terminal
+    }
     if mode == 2 {
         printw(":"); // Indicate that a command can be typed in
-        //TODO: use (screenheight) maxzeilen to draw the command on last line of terminal
     }
     printw(&format!("{}", command));
 }
