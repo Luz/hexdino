@@ -87,7 +87,7 @@ fn main() {
 
     file.read_to_end(&mut buffer).ok().expect("File could not be read.");
 
-    let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, TODO 3 Insert
+    let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, 3 Insert
 
     draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate);
 
@@ -122,9 +122,8 @@ fn main() {
                 },
                 114 => mode = 1, //r replaces the next char
                 120 => {buffer.remove(cursorpos);}, //x remove the next char
-                105 => {buffer.insert(cursorpos, 0x00);},
-                 58 => {mode = 2; // ":"
-                            command.clear();},
+                105 => mode = 3, //i goes to insert mode
+                 58 => {mode = 2; command.clear();}, // ":"
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
                 _ => (),
             }
@@ -138,25 +137,27 @@ fn main() {
         } else
         if mode == 1 && cursorstate == 0 {
             match key { // Change left nibble
-                c @  65... 70 => { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 55)<<4 }, //A-F
-                c @  97...102 => { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 55)<<4 }, //a-f
-                c @  48... 57 => { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 48)<<4 }, //0-9
+                c @ 65...70 | c @ 97...102 => // A-F or a-f
+                    { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 55)<<4 },
+                c @ 48... 57 => // 0-9
+                    { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 48)<<4 },
                 _ => ()
             }
             mode = 0;
         } else
         if mode == 1 && cursorstate == 1 {
-            match key { // Chnage right nibble
-                c @  65... 70 => { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55)<<0 }, //A-F
-                c @  97...102 => { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55)<<0 }, //a-f
-                c @  48... 57 => { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 48)<<0 }, //0-9
+            match key { // Change right nibble
+                c @ 65...70 | c @ 97...102 => // A-F or a-f
+                    { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55) },
+                c @ 48... 57 => // 0-9
+                    { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 48) },
                 _ => ()
             }
             mode = 0;
         } else
         if mode == 2 {
             match key {
-                c @ 32...126 => { command.push(c as u8 as char); }, //TODO check this
+                c @ 32...126 => { command.push(c as u8 as char); },
                 27 => {command.clear();mode = 0;},
                 10 => { // Enter pressed, compute command!
                         if (command == "w".to_string()) || (command == "wq".to_string()) {
@@ -177,6 +178,35 @@ fn main() {
                         }
                     },
                 _ => (),
+            }
+        } else
+        if mode == 3 {
+            if cursorstate == 0 { // Left nibble
+                match key {
+                    c @ 65...70 | c @ 97...102 => // A-F or a-f
+                        {buffer.insert(cursorpos, (c as u8 - 55)<<4 ); cursorstate = 1;},
+                    c @ 48... 57 => // 0-9
+                        {buffer.insert(cursorpos, (c as u8 - 48)<<4); cursorstate = 1;},
+                    27 => {mode = 0;},
+                    _ => ()
+                }
+            } else
+            if cursorstate == 1 { // Right nibble
+                match key {
+                    c @ 65...70 | c @ 97...102 => // A-F or a-f
+                        { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55); cursorstate = 0; cursorpos+=1; },
+                    c @ 48...57 => // 0-9
+                        { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 48); cursorstate = 0; cursorpos+=1; },
+                    27 => {mode = 0;},
+                    _ => ()
+                }
+            } else
+            if cursorstate == 2 { // Ascii
+                match key {
+                    c @ 32...126 => { buffer.insert(cursorpos, c as u8); },
+                    27 => {mode = 0;},
+                    _ => (),
+                }
             }
         }
         draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate);
@@ -233,6 +263,9 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
     }
     if mode == 2 {
         printw(":"); // Indicate that a command can be typed in
+    }
+    if mode == 3 {
+        printw("insert"); // Indicate that insert mode is active
     }
     printw(&format!("{}", command));
 }
