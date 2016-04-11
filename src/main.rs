@@ -206,7 +206,7 @@ fn main() {
             } else
             if cursorstate == 2 { // Ascii
                 match key {
-                    c @ 32...126 => { buffer.insert(cursorpos, c as u8); },
+                    c @ 32...126 => { buffer.insert(cursorpos, c as u8); cursorpos+=1; },
                     27 => {mode = 0;},
                     _ => (),
                 }
