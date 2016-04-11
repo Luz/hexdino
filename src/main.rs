@@ -101,29 +101,32 @@ fn main() {
         if mode == 0 { // movement mode
             match key {
                 104 => { // Button "h"
-                    if cursorstate == 1 { cursorstate = 0;}
-                    else if cursorpos != 0 { cursorstate = 1; cursorpos-=1}
+                    if cursorstate == 2 && cursorpos != 0 {cursorpos-=1}
+                    else if cursorstate == 1 {cursorstate = 0}
+                    else if cursorpos != 0 {cursorstate = 1; cursorpos-=1}
                 },
                 106 => if cursorpos+SPALTEN < buffer.len() {cursorpos+=SPALTEN} //down is "+16"
                         else {cursorpos=buffer.len()-1}, //down if on last line is "to end"
                 107 => if cursorpos >= SPALTEN {cursorpos-=SPALTEN}, //up is "-16"
                 108 => { // Button "l"
-                    if cursorstate == 0 { cursorstate = 1; }
-                    else if cursorstate == 1 && cursorpos != buffer.len()-1 { cursorstate = 0; cursorpos+=1; }
+                    if cursorstate == 2 && cursorpos != buffer.len()-1 {cursorpos+=1}
+                    else if cursorstate == 0 {cursorstate = 1}
+                    else if cursorstate == 1 && cursorpos != buffer.len()-1 {cursorstate = 0; cursorpos+=1}
                 },
                  48 => { // Start of line is "to start"
                      cursorpos -= cursorpos%16;
-                     cursorstate = 0;
+                     if cursorstate == 1 {cursorstate = 0}
                 },
                  36 => { //dollar is "to end"
                      if cursorpos-(cursorpos%16)+(SPALTEN-1) < buffer.len() {cursorpos = cursorpos-(cursorpos%16)+(SPALTEN-1)}
                         else {cursorpos = buffer.len()-1};
-                    cursorstate = 1;
+                    if cursorstate == 0 {cursorstate = 1;}
                 },
                 114 => mode = 1, //r replaces the next char
                 120 => {buffer.remove(cursorpos);}, //x remove the next char
                 105 => mode = 3, //i goes to insert mode
                  58 => {mode = 2; command.clear();}, // ":"
+                 74 => {if cursorstate == 2 {cursorstate = 0;} else {cursorstate = 2;}}, // J jumps to ascii
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
                 _ => (),
             }
