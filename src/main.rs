@@ -233,31 +233,50 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
         printw(" "); // Additional space between line number and hex
         for s in 0 .. spalten {
             if z*spalten+s < buffer.len() {
-                if z*spalten+s == cursorpos && cursorstate == 0 { attron(COLOR_PAIR(1)); } // Color of left nibble
+                if z*spalten+s == cursorpos { // Color of left nibble
+                    if cursorstate == 0 {attron(COLOR_PAIR(1) | A_STANDOUT());}
+                    else if cursorstate == 2 {attron(A_UNDERLINE());}
+                }
                 printw(&format!("{:01X}", buffer[z*spalten+s]>>4) ); // Display left nibble
-                if z*spalten+s == cursorpos && cursorstate == 0 { attroff(COLOR_PAIR(1)); }
+                if z*spalten+s == cursorpos { // End of color left nibble
+                    if cursorstate == 0 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
+                    else if cursorstate == 2 {attroff(A_UNDERLINE());}
+                }
 
-                if z*spalten+s == cursorpos && cursorstate == 1 { attron(COLOR_PAIR(1)); } // Color of right nibble
-                printw(&format!("{:01X} ", buffer[z*spalten+s]&0x0F) ); // Display right nibble
-                if z*spalten+s == cursorpos && cursorstate == 1 { attroff(COLOR_PAIR(1)); }
+                if z*spalten+s == cursorpos { // Color of right nibble
+                    if cursorstate == 1 {attron(COLOR_PAIR(1) | A_STANDOUT());}
+                    else if cursorstate == 2 {attron(A_UNDERLINE());}
+                }
+                printw(&format!("{:01X}", buffer[z*spalten+s]&0x0F) ); // Display right nibble
+                if z*spalten+s == cursorpos {
+                    if cursorstate == 1 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
+                    else if cursorstate == 2 {attroff(A_UNDERLINE());}
+                }
+                printw(" ");
             } else {
                 printw("-- ");
             }
         }
         printw(" "); // Additional space between hex and ascii
         for s in 0 .. spalten {
-            if z*spalten+s == cursorpos && cursorstate == 2 { attron(COLOR_PAIR(1)); }
-                if z*spalten+s < buffer.len() {
-                    if let c @ 32...126 = buffer[z*spalten+s] {
-                        if c as char == '%' {
-                            printw("%%"); // '%' needs to be escaped by a '%' in ncurses
-                        } else {
-                            printw(&format!("{}", c as char) );
-                        }
+            if z*spalten+s == cursorpos {
+                if cursorstate == 2 {attron(COLOR_PAIR(1) | A_STANDOUT());}
+                else {attron(A_UNDERLINE());}
+            }
+            if z*spalten+s < buffer.len() {
+                if let c @ 32...126 = buffer[z*spalten+s] {
+                    if c as char == '%' {
+                        printw("%%"); // '%' needs to be escaped by a '%' in ncurses
+                    } else {
+                        printw(&format!("{}", c as char) );
                     }
-                    else {printw(&format!(".") );}
                 }
-            if z*spalten+s == cursorpos && cursorstate == 2 { attroff(COLOR_PAIR(1)); }
+                else {printw(&format!(".") );}
+            }
+            if z*spalten+s == cursorpos {
+                if cursorstate == 2 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
+                else {attroff(A_UNDERLINE());}
+            }
         }
         printw("\n");
     }
