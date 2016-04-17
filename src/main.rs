@@ -18,7 +18,7 @@ use ncurses::*;
 //use getopts::Options;
 
 fn main() {
-    let mut buffer = vec![];
+    let mut buf = vec![];
     let mut cursorpos:usize = 0;
     let mut cursorstate:usize = 0; //0 is left nibble, 1 is right nibble, 2 is ascii
     let mut screenoffset:usize = 0; // 0 = display data from first line of file
@@ -86,21 +86,21 @@ fn main() {
         Ok(file) => file,
     };
 
-    file.read_to_end(&mut buffer).ok().expect("File could not be read.");
+    file.read_to_end(&mut buf).ok().expect("File could not be read.");
 
     let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, 3 Insert
 
-    draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
+    draw(&buf, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
 
     let mut key;
 //    key = getch();
 //    printw(&format!("{:?}", key));
 
-    let mut ragequitnow = 0;
-    while ragequitnow == 0 {
-        key = getch();
+    let mut quitnow = 0;
+    while quitnow == 0 {
+        key = getch() as u8;
         if mode == 0 { // movement mode
-            match key {
+            match key{
                 104 => { // Button "h"
                     if cursorstate == 2 { // ascii mode
                         if cursorpos > 0 { // not at start
@@ -118,11 +118,11 @@ fn main() {
                     }
                 },
                 106 => { //Button "j"
-                    if cursorpos+SPALTEN < buffer.len() { // not at end
+                    if cursorpos+SPALTEN < buf.len() { // not at end
                         cursorpos+=SPALTEN; // go down
                     }
                     else { // when at end
-                        cursorpos=buffer.len()-1; // go to end
+                        cursorpos=buf.len()-1; // go to end
                     }
                 },
                 107 => { //Button "k"
@@ -132,7 +132,7 @@ fn main() {
                 },
                 108 => { // Button "l"
                     if cursorstate == 2 { // ascii mode
-                        if cursorpos < buffer.len()-1 { // not at end
+                        if cursorpos < buf.len()-1 { // not at end
                             cursorpos+=1; // go right
                         }
                     }
@@ -140,7 +140,7 @@ fn main() {
                         cursorstate = 1; // right nibble
                     }
                     else if cursorstate == 1 { // hex mode, right nibble
-                        if cursorpos < buffer.len()-1 { // not at end
+                        if cursorpos < buf.len()-1 { // not at end
                             cursorstate = 0; // left nibble
                             cursorpos+=1; // go right
                         }
@@ -153,11 +153,11 @@ fn main() {
                     }
                 },
                  36 => { // Button "$"
-                    if cursorpos-(cursorpos%SPALTEN)+(SPALTEN-1) < buffer.len() { // check if no overflow
+                    if cursorpos-(cursorpos%SPALTEN)+(SPALTEN-1) < buf.len() { // check if no overflow
                         cursorpos = cursorpos-(cursorpos%SPALTEN)+(SPALTEN-1); // jump to end of line
                     }
                     else {
-                        cursorpos = buffer.len()-1 // jump to end of line
+                        cursorpos = buf.len()-1 // jump to end of line
                     }
                     if cursorstate == 0 { // hex mode, left nibble
                         cursorstate = 1; // right nibble
@@ -167,16 +167,16 @@ fn main() {
                     mode = 1; // replaces the next char
                 },
                 120 => { // Button "x"
-                    if buffer.len() > 0 { // remove the next char
-                        buffer.remove(cursorpos);
+                    if buf.len() > 0 { // remove the next char
+                        buf.remove(cursorpos);
                     }
                 },
                 105 => { // Button "i"
                     mode = 3; // go to insert mode
                 },
                  58 => { // Button ":"
-                     mode = 2; // write a command
                      command.clear(); // delete old command
+                     mode = 2; // write a command
                  },
                  74 => { // Button "J"
                      if cursorstate == 2 { // ascii mode
@@ -186,7 +186,9 @@ fn main() {
                          cursorstate = 2; // jump to ascii
                      }
                  },
-//                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
+                 63 => { //TODO
+                     command.push_str("No helpfile yet");
+                 },
                 _ => (),
             }
 
@@ -201,46 +203,40 @@ fn main() {
         } else
         if mode == 1 && cursorstate == 2 { // r was pressed so replace next char in ascii mode
             match key {
-                c @ 32...126 => { buffer[cursorpos] = c as u8 },
+                c @ 32...126 => { buf[cursorpos] = c },
                 _ => (),
             }
             mode = 0;
         } else
-        if mode == 1 && cursorstate == 0 {
-            match key { // Change left nibble
-                c @ 65...70 | c @ 97...102 => // A-F or a-f
-                    { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 55)<<4 },
+        if mode == 1 {
+            let mask = if cursorstate == 0 { 0x0F } else { 0xF0 };
+            let shift = if cursorstate == 0 { 4 } else { 0 };
+            match key { // Change the selected nibble
+                c @ 65... 70 => // A-F
+                    { buf[cursorpos] = buf[cursorpos]&mask | (c-55)<<shift },
+                c @ 97...102 => // a-f
+                    { buf[cursorpos] = buf[cursorpos]&mask | (c-87)<<shift },
                 c @ 48... 57 => // 0-9
-                    { buffer[cursorpos] = buffer[cursorpos]&0x0F | (c as u8 - 48)<<4 },
-                _ => ()
-            }
-            mode = 0;
-        } else
-        if mode == 1 && cursorstate == 1 {
-            match key { // Change right nibble
-                c @ 65...70 | c @ 97...102 => // A-F or a-f
-                    { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55) },
-                c @ 48... 57 => // 0-9
-                    { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 48) },
+                    { buf[cursorpos] = buf[cursorpos]&mask | (c-48)<<shift },
                 _ => ()
             }
             mode = 0;
         } else
         if mode == 2 {
             match key {
-                c @ 32...126 => { command.push(c as u8 as char); },
+                c @ 32...126 => { command.push(c as char); },
                 27 => {command.clear();mode = 0;},
                 10 => { // Enter pressed, compute command!
                         if (command == "w".to_string()) || (command == "wq".to_string()) {
                             file.seek(SeekFrom::Start(0)).ok().expect("Filepointer could not be set to 0");
-                            file.write_all(&mut buffer).ok().expect("File could not be written.");
+                            file.write_all(&mut buf).ok().expect("File could not be written.");
                             if command == "wq".to_string() {
-                                ragequitnow = 1;
+                                quitnow = 1;
                             }
                             command.clear();mode = 0;
                         }
                         else if command == "q".to_string() {
-                            ragequitnow = 1;
+                            quitnow = 1;
                         }
                         else {
                             command.clear();
@@ -254,43 +250,47 @@ fn main() {
         if mode == 3 {
             if cursorstate == 0 { // Left nibble
                 match key {
-                    c @ 65...70 | c @ 97...102 => // A-F or a-f
-                        {buffer.insert(cursorpos, (c as u8 - 55)<<4 ); cursorstate = 1;},
+                    c @ 65... 70 => // A-F
+                        {buf.insert(cursorpos, (c-55)<<4 ); cursorstate = 1;},
+                    c @ 97...102 => // a-f
+                        {buf.insert(cursorpos, (c-87)<<4 ); cursorstate = 1;},
                     c @ 48... 57 => // 0-9
-                        {buffer.insert(cursorpos, (c as u8 - 48)<<4); cursorstate = 1;},
+                        {buf.insert(cursorpos, (c-48)<<4 ); cursorstate = 1;},
                     27 => {mode = 0;},
                     _ => ()
                 }
             } else
             if cursorstate == 1 { // Right nibble
                 match key {
-                    c @ 65...70 | c @ 97...102 => // A-F or a-f
-                        { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 55); cursorstate = 0; cursorpos+=1; },
+                    c @ 65...70 => // A-F
+                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-55); cursorstate = 0; cursorpos+=1; },
+                    c @ 97...102 => // a-f
+                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-87); cursorstate = 0; cursorpos+=1; },
                     c @ 48...57 => // 0-9
-                        { buffer[cursorpos] = buffer[cursorpos]&0xF0 | (c as u8 - 48); cursorstate = 0; cursorpos+=1; },
+                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-48); cursorstate = 0; cursorpos+=1; },
                     27 => {mode = 0;},
                     _ => ()
                 }
             } else
             if cursorstate == 2 { // Ascii
                 match key {
-                    c @ 32...126 => { buffer.insert(cursorpos, c as u8); cursorpos+=1; },
+                    c @ 32...126 => { buf.insert(cursorpos, c); cursorpos+=1; },
                     27 => {mode = 0;},
                     _ => (),
                 }
             }
         }
-        draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
+        draw(&buf, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
     }
 
     refresh();
     endwin();
 }
 
-fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:usize, command:&String, cursorstate:usize, screenoffset:usize) {
+fn draw(buf:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:usize, command:&String, cursorstate:usize, screenoffset:usize) {
     erase();
 
-    let mut zeilen = buffer.len() / spalten;
+    let mut zeilen = buf.len() / spalten;
     if zeilen >= maxzeilen-1 { // Last line reserved for Status/Commands/etc (Like in vim)
         zeilen = maxzeilen-2;
     }
@@ -299,12 +299,12 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
         printw(&format!("{:08X}: ", z*spalten+screenoffset*spalten )); // 8 hex digits (4GB/spalten or 0.25GB@spalten=SPALTEN)
         printw(" "); // Additional space between line number and hex
         for s in 0 .. spalten {
-            if z*spalten+screenoffset*spalten+s < buffer.len() {
+            if z*spalten+screenoffset*spalten+s < buf.len() {
                 if z*spalten+screenoffset*spalten+s == cursorpos { // Color of left nibble
                     if cursorstate == 0 {attron(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attron(A_UNDERLINE());}
                 }
-                printw(&format!("{:01X}", buffer[z*spalten+screenoffset*spalten+s]>>4) ); // Display left nibble
+                printw(&format!("{:01X}", buf[z*spalten+screenoffset*spalten+s]>>4) ); // Display left nibble
                 if z*spalten+screenoffset*spalten+s == cursorpos { // End of color left nibble
                     if cursorstate == 0 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attroff(A_UNDERLINE());}
@@ -314,7 +314,7 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
                     if cursorstate == 1 {attron(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attron(A_UNDERLINE());}
                 }
-                printw(&format!("{:01X}", buffer[z*spalten+screenoffset*spalten+s]&0x0F) ); // Display right nibble
+                printw(&format!("{:01X}", buf[z*spalten+screenoffset*spalten+s]&0x0F) ); // Display right nibble
                 if z*spalten+screenoffset*spalten+s == cursorpos {
                     if cursorstate == 1 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attroff(A_UNDERLINE());}
@@ -330,8 +330,8 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
                 if cursorstate == 2 {attron(COLOR_PAIR(1) | A_STANDOUT());}
                 else {attron(A_UNDERLINE());}
             }
-            if z*spalten+screenoffset*spalten+s < buffer.len() {
-                if let c @ 32...126 = buffer[z*spalten+screenoffset*spalten+s] {
+            if z*spalten+screenoffset*spalten+s < buf.len() {
+                if let c @ 32...126 = buf[z*spalten+screenoffset*spalten+s] {
                     if c as char == '%' {
                         printw("%%"); // '%' needs to be escaped by a '%' in ncurses
                     } else {
