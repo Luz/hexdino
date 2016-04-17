@@ -21,6 +21,7 @@ fn main() {
     let mut buffer = vec![];
     let mut cursorpos:usize = 0;
     let mut cursorstate:usize = 0; //0 is left nibble, 1 is right nibble, 2 is ascii
+    let mut screenoffset:usize = 0; // 0 = display data from first line of file
     const SPALTEN:usize = 16;
     let mut command = String::new();
 
@@ -89,7 +90,7 @@ fn main() {
 
     let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, 3 Insert
 
-    draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate);
+    draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
 
     let mut key;
 //    key = getch();
@@ -101,35 +102,102 @@ fn main() {
         if mode == 0 { // movement mode
             match key {
                 104 => { // Button "h"
-                    if cursorstate == 2 && cursorpos != 0 {cursorpos-=1}
-                    else if cursorstate == 1 {cursorstate = 0}
-                    else if cursorpos != 0 {cursorstate = 1; cursorpos-=1}
+                    if cursorstate == 2 { // ascii mode
+                        if cursorpos > 0 { // not at start
+                            cursorpos-=1; // go left
+                        }
+                    }
+                    else if cursorstate == 1 { // hex mode, right nibble
+                        cursorstate = 0; // left nibble
+                    }
+                    else if cursorstate == 0 { // hex mode, left nibble
+                        if cursorpos > 0 { // not at start
+                            cursorstate = 1; // right nibble
+                            cursorpos-=1; // go left
+                        }
+                    }
                 },
-                106 => if cursorpos+SPALTEN < buffer.len() {cursorpos+=SPALTEN} //down is "+16"
-                        else {cursorpos=buffer.len()-1}, //down if on last line is "to end"
-                107 => if cursorpos >= SPALTEN {cursorpos-=SPALTEN}, //up is "-16"
+                106 => { //Button "j"
+                    if cursorpos+SPALTEN < buffer.len() { // not at end
+                        cursorpos+=SPALTEN; // go down
+                    }
+                    else { // when at end
+                        cursorpos=buffer.len()-1; // go to end
+                    }
+                },
+                107 => { //Button "k"
+                    if cursorpos >= SPALTEN {
+                        cursorpos-=SPALTEN;
+                    }
+                },
                 108 => { // Button "l"
-                    if cursorstate == 2 && cursorpos != buffer.len()-1 {cursorpos+=1}
-                    else if cursorstate == 0 {cursorstate = 1}
-                    else if cursorstate == 1 && cursorpos != buffer.len()-1 {cursorstate = 0; cursorpos+=1}
+                    if cursorstate == 2 { // ascii mode
+                        if cursorpos < buffer.len()-1 { // not at end
+                            cursorpos+=1; // go right
+                        }
+                    }
+                    else if cursorstate == 0 { // hex mode, left nibble
+                        cursorstate = 1; // right nibble
+                    }
+                    else if cursorstate == 1 { // hex mode, right nibble
+                        if cursorpos < buffer.len()-1 { // not at end
+                            cursorstate = 0; // left nibble
+                            cursorpos+=1; // go right
+                        }
+                    }
                 },
-                 48 => { // Start of line is "to start"
-                     cursorpos -= cursorpos%16;
-                     if cursorstate == 1 {cursorstate = 0}
+                 48 => { // Button "0"
+                    cursorpos -= cursorpos%SPALTEN; // jump to start of line
+                    if cursorstate == 1 { // hex mode, right nibble
+                        cursorstate = 0; // left nibble
+                    }
                 },
-                 36 => { //dollar is "to end"
-                     if cursorpos-(cursorpos%16)+(SPALTEN-1) < buffer.len() {cursorpos = cursorpos-(cursorpos%16)+(SPALTEN-1)}
-                        else {cursorpos = buffer.len()-1};
-                    if cursorstate == 0 {cursorstate = 1;}
+                 36 => { // Button "$"
+                    if cursorpos-(cursorpos%SPALTEN)+(SPALTEN-1) < buffer.len() { // check if no overflow
+                        cursorpos = cursorpos-(cursorpos%SPALTEN)+(SPALTEN-1); // jump to end of line
+                    }
+                    else {
+                        cursorpos = buffer.len()-1 // jump to end of line
+                    }
+                    if cursorstate == 0 { // hex mode, left nibble
+                        cursorstate = 1; // right nibble
+                    }
                 },
-                114 => mode = 1, //r replaces the next char
-                120 => {buffer.remove(cursorpos);}, //x remove the next char
-                105 => mode = 3, //i goes to insert mode
-                 58 => {mode = 2; command.clear();}, // ":"
-                 74 => {if cursorstate == 2 {cursorstate = 0;} else {cursorstate = 2;}}, // J jumps to ascii
+                114 => { // Button "r"
+                    mode = 1; // replaces the next char
+                },
+                120 => { // Button "x"
+                    if buffer.len() > 0 { // remove the next char
+                        buffer.remove(cursorpos);
+                    }
+                },
+                105 => { // Button "i"
+                    mode = 3; // go to insert mode
+                },
+                 58 => { // Button ":"
+                     mode = 2; // write a command
+                     command.clear(); // delete old command
+                 },
+                 74 => { // Button "J"
+                     if cursorstate == 2 { // ascii mode
+                         cursorstate = 0; // hex mode, left nibble
+                     }
+                     else {
+                         cursorstate = 2; // jump to ascii
+                     }
+                 },
 //                 63 => printw("{:?}", asdf), //TODO: print available key helpfile
                 _ => (),
             }
+
+            //Always move screen when cursor leaves screen
+            if cursorpos > (screenheight+screenoffset-1)*SPALTEN -1 {
+                screenoffset+=1; // move screen
+            }
+            if cursorpos < screenoffset*SPALTEN {
+                screenoffset-=1; // move screen
+            }
+
         } else
         if mode == 1 && cursorstate == 2 { // r was pressed so replace next char in ascii mode
             match key {
@@ -212,15 +280,14 @@ fn main() {
                 }
             }
         }
-        draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate);
+        draw(&buffer, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
     }
 
     refresh();
     endwin();
 }
 
-fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:usize, command:&String, cursorstate:usize) {
-//    let zeilen = buffer.len() / spalten;
+fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:usize, command:&String, cursorstate:usize, screenoffset:usize) {
     erase();
 
     let mut zeilen = buffer.len() / spalten;
@@ -229,26 +296,26 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
     }
 
     for z in 0 .. zeilen+1 {
-        printw(&format!("{:08X}: ", z * spalten )); // 8 hex digits (4GB/spalten or 0.25GB@spalten=16)
+        printw(&format!("{:08X}: ", z*spalten+screenoffset*spalten )); // 8 hex digits (4GB/spalten or 0.25GB@spalten=SPALTEN)
         printw(" "); // Additional space between line number and hex
         for s in 0 .. spalten {
-            if z*spalten+s < buffer.len() {
-                if z*spalten+s == cursorpos { // Color of left nibble
+            if z*spalten+screenoffset*spalten+s < buffer.len() {
+                if z*spalten+screenoffset*spalten+s == cursorpos { // Color of left nibble
                     if cursorstate == 0 {attron(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attron(A_UNDERLINE());}
                 }
-                printw(&format!("{:01X}", buffer[z*spalten+s]>>4) ); // Display left nibble
-                if z*spalten+s == cursorpos { // End of color left nibble
+                printw(&format!("{:01X}", buffer[z*spalten+screenoffset*spalten+s]>>4) ); // Display left nibble
+                if z*spalten+screenoffset*spalten+s == cursorpos { // End of color left nibble
                     if cursorstate == 0 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attroff(A_UNDERLINE());}
                 }
 
-                if z*spalten+s == cursorpos { // Color of right nibble
+                if z*spalten+screenoffset*spalten+s == cursorpos { // Color of right nibble
                     if cursorstate == 1 {attron(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attron(A_UNDERLINE());}
                 }
-                printw(&format!("{:01X}", buffer[z*spalten+s]&0x0F) ); // Display right nibble
-                if z*spalten+s == cursorpos {
+                printw(&format!("{:01X}", buffer[z*spalten+screenoffset*spalten+s]&0x0F) ); // Display right nibble
+                if z*spalten+screenoffset*spalten+s == cursorpos {
                     if cursorstate == 1 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
                     else if cursorstate == 2 {attroff(A_UNDERLINE());}
                 }
@@ -259,12 +326,12 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
         }
         printw(" "); // Additional space between hex and ascii
         for s in 0 .. spalten {
-            if z*spalten+s == cursorpos {
+            if z*spalten+screenoffset*spalten+s == cursorpos {
                 if cursorstate == 2 {attron(COLOR_PAIR(1) | A_STANDOUT());}
                 else {attron(A_UNDERLINE());}
             }
-            if z*spalten+s < buffer.len() {
-                if let c @ 32...126 = buffer[z*spalten+s] {
+            if z*spalten+screenoffset*spalten+s < buffer.len() {
+                if let c @ 32...126 = buffer[z*spalten+screenoffset*spalten+s] {
                     if c as char == '%' {
                         printw("%%"); // '%' needs to be escaped by a '%' in ncurses
                     } else {
@@ -273,7 +340,7 @@ fn draw(buffer:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:u
                 }
                 else {printw(&format!(".") );}
             }
-            if z*spalten+s == cursorpos {
+            if z*spalten+screenoffset*spalten+s == cursorpos {
                 if cursorstate == 2 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
                 else {attroff(A_UNDERLINE());}
             }
