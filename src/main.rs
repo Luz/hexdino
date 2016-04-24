@@ -93,7 +93,7 @@ fn main() {
     draw(&buf, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
 
     let mut key;
-//    key = getch();
+//    key = getch() as u8;
 //    printw(&format!("{:?}", key));
 
     let mut quitnow = 0;
@@ -188,6 +188,9 @@ fn main() {
                  },
                  63 => { //TODO
                      command.push_str("No helpfile yet");
+                 },
+                 47 => { //TODO
+                     cursorpos = buf.iter().position(|&x| x == 0x33).unwrap();
                  },
                 _ => (),
             }
