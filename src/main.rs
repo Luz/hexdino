@@ -122,7 +122,9 @@ fn main() {
                         cursorpos+=SPALTEN; // go down
                     }
                     else { // when at end
-                        cursorpos=buf.len()-1; // go to end
+                        if buf.len() != 0 { // Suppress underflow
+                            cursorpos=buf.len()-1; // go to end
+                        }
                     }
                 },
                 107 => { //Button "k"
@@ -167,8 +169,11 @@ fn main() {
                     mode = 1; // replaces the next char
                 },
                 120 => { // Button "x"
-                    if buf.len() > 0 { // remove the next char
+                    if buf.len() > 0 { // remove the current char
                         buf.remove(cursorpos);
+                        if cursorpos >= buf.len() {
+                            cursorpos = buf.len()-1;
+                        }
                     }
                 },
                 105 => { // Button "i"
