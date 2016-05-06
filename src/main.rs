@@ -11,6 +11,9 @@ use std::path::Path;
 use std::error::Error;
 use std::env;
 
+mod draw;
+use draw::draw;
+
 extern crate ncurses;
 use ncurses::*;
 
@@ -88,9 +91,9 @@ fn main() {
 
     file.read_to_end(&mut buf).ok().expect("File could not be read.");
 
-    let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, 3 Insert
+    let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, 3 Insert, 4 type a search, 5 search it
 
-    draw(&buf, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
+    draw(&buf, cursorpos, SPALTEN, mode, &command, cursorstate, screenoffset);
 
     let mut key;
 //    key = getch() as u8;
@@ -195,7 +198,8 @@ fn main() {
                      command.push_str("No helpfile yet");
                  },
                  47 => { //TODO
-                     cursorpos = buf.iter().position(|&x| x == 0x33).unwrap();
+                     command.clear();
+                     mode = 4;
                  },
                 _ => (),
             }
@@ -287,82 +291,31 @@ fn main() {
                     _ => (),
                 }
             }
+        } else
+        if mode == 4 {
+//            if cursorstate == 2 { // Ascii search
+                match key {
+                    c @ 32...126 => { command.push(c as char); },
+                    27 => {command.clear();mode = 0;},
+                    10 => { // Enter pressed, compute command!
+                        mode = 5;
+                    }
+                    _ => (),
+                }
+//            }
+
+            if mode == 5 {
+                if (command.chars().next() == Some('a')) || (command == "b".to_string()) {
+                     cursorpos = buf.iter().position(|&x| x == 'a' as u8).unwrap(); // what to do when not found? TODO
+                }
+                mode = 0;
+                    //command.push_str("Bad_command!");
+            }
         }
-        draw(&buf, cursorpos, SPALTEN, screenheight, mode, &command, cursorstate, screenoffset);
+        draw(&buf, cursorpos, SPALTEN, mode, &command, cursorstate, screenoffset);
     }
 
     refresh();
     endwin();
 }
 
-fn draw(buf:&Vec<u8>, cursorpos:usize, spalten:usize, maxzeilen:usize, mode:usize, command:&String, cursorstate:usize, screenoffset:usize) {
-    erase();
-
-    let mut zeilen = buf.len() / spalten;
-    if zeilen >= maxzeilen-1 { // Last line reserved for Status/Commands/etc (Like in vim)
-        zeilen = maxzeilen-2;
-    }
-
-    for z in 0 .. zeilen+1 {
-        printw(&format!("{:08X}: ", z*spalten+screenoffset*spalten )); // 8 hex digits (4GB/spalten or 0.25GB@spalten=SPALTEN)
-        printw(" "); // Additional space between line number and hex
-        for s in 0 .. spalten {
-            if z*spalten+screenoffset*spalten+s < buf.len() {
-                if z*spalten+screenoffset*spalten+s == cursorpos { // Color of left nibble
-                    if cursorstate == 0 {attron(COLOR_PAIR(1) | A_STANDOUT());}
-                    else if cursorstate == 2 {attron(A_UNDERLINE());}
-                }
-                printw(&format!("{:01X}", buf[z*spalten+screenoffset*spalten+s]>>4) ); // Display left nibble
-                if z*spalten+screenoffset*spalten+s == cursorpos { // End of color left nibble
-                    if cursorstate == 0 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
-                    else if cursorstate == 2 {attroff(A_UNDERLINE());}
-                }
-
-                if z*spalten+screenoffset*spalten+s == cursorpos { // Color of right nibble
-                    if cursorstate == 1 {attron(COLOR_PAIR(1) | A_STANDOUT());}
-                    else if cursorstate == 2 {attron(A_UNDERLINE());}
-                }
-                printw(&format!("{:01X}", buf[z*spalten+screenoffset*spalten+s]&0x0F) ); // Display right nibble
-                if z*spalten+screenoffset*spalten+s == cursorpos {
-                    if cursorstate == 1 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
-                    else if cursorstate == 2 {attroff(A_UNDERLINE());}
-                }
-                printw(" ");
-            } else {
-                printw("-- ");
-            }
-        }
-        printw(" "); // Additional space between hex and ascii
-        for s in 0 .. spalten {
-            if z*spalten+screenoffset*spalten+s == cursorpos {
-                if cursorstate == 2 {attron(COLOR_PAIR(1) | A_STANDOUT());}
-                else {attron(A_UNDERLINE());}
-            }
-            if z*spalten+screenoffset*spalten+s < buf.len() {
-                if let c @ 32...126 = buf[z*spalten+screenoffset*spalten+s] {
-                    if c as char == '%' {
-                        printw("%%"); // '%' needs to be escaped by a '%' in ncurses
-                    } else {
-                        printw(&format!("{}", c as char) );
-                    }
-                }
-                else {printw(&format!(".") );}
-            }
-            if z*spalten+screenoffset*spalten+s == cursorpos {
-                if cursorstate == 2 {attroff(COLOR_PAIR(1) | A_STANDOUT());}
-                else {attroff(A_UNDERLINE());}
-            }
-        }
-        printw("\n");
-    }
-    for _ in 0 .. maxzeilen-zeilen-2 {
-        printw("\n"); // Put the cursor on last line of terminal
-    }
-    if mode == 2 {
-        printw(":"); // Indicate that a command can be typed in
-    }
-    if mode == 3 {
-        printw("insert"); // Indicate that insert mode is active
-    }
-    printw(&format!("{}", command));
-}
