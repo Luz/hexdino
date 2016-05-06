@@ -55,8 +55,12 @@ pub fn draw(buf:&Vec<u8>, cursorpos:usize, cols:usize, mode:usize, command:&Stri
                         printw(&format!("{}", c as char) );
                     }
                 }
-                else {printw(&format!(".") );}
+                else {printw(&format!(".") );} // Mark non-ascii symbols
+            } else
+            if pos == buf.len() {
+                printw(" "); // Pad ascii with spaces
             }
+
             color_ascii_cond(false, pos==cursorpos, cursorstate);
         }
         printw("\n");
