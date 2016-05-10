@@ -12,7 +12,9 @@ use std::error::Error;
 use std::env;
 
 mod draw;
+mod find;
 use draw::draw;
+use find::FindSubset;
 
 extern crate ncurses;
 use ncurses::*;
@@ -305,9 +307,8 @@ fn main() {
 //            }
 
             if mode == 5 {
-                if (command.chars().next() == Some('a')) || (command == "b".to_string()) {
-                     cursorpos = buf.iter().position(|&x| x == 'a' as u8).unwrap(); // what to do when not found? TODO
-                }
+                let search = command.as_bytes();
+                cursorpos = buf.find_subset(&search).unwrap_or(0);
                 mode = 0;
                     //command.push_str("Bad_command!");
             }
