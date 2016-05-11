@@ -18,5 +18,4 @@ cargo build
 
 ## TODO
 
-Remove `ansi\_term` dependency.
 

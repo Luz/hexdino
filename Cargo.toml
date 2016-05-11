@@ -4,7 +4,6 @@ version = "0.1.0"
 authors = ["Luz"]
 
 [dependencies]
-ansi_term = "^0.7"
 libc = "^0.2"
 ncurses = "5"
 getopts = "0.2"
