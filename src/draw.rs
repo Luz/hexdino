@@ -1,7 +1,8 @@
 extern crate ncurses;
 use ncurses::*;
+use Mode;
 
-pub fn draw(buf:&Vec<u8>, cursorpos:usize, cols:usize, mode:usize, command:&String, cursorstate:usize, screenoffset:usize) {
+pub fn draw(buf:&Vec<u8>, cursorpos:usize, cols:usize, mode:Mode, command:&String, cursorstate:usize, screenoffset:usize) {
     erase();
 
     let screenheight : usize = getmaxy(stdscr) as usize;
@@ -68,13 +69,13 @@ pub fn draw(buf:&Vec<u8>, cursorpos:usize, cols:usize, mode:usize, command:&Stri
     for _ in 0 .. screenheight-rows-2 { // TODO: check if "rows" is better
         printw("\n"); // Put the cursor on last line of terminal
     }
-    if mode == 2 {
+    if mode == Mode::TypeCommand {
         printw(":"); // Indicate that a command can be typed in
     }
-    if mode == 3 {
+    if mode == Mode::Insert {
         printw("insert"); // Indicate that insert mode is active
     }
-    if mode == 4 {
+    if mode == Mode::TypeSearch {
         printw("/"); // indicate that the search mode is active
     }
     printw(&format!("{}", command));

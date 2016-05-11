@@ -22,6 +22,16 @@ use ncurses::*;
 //extern crate getopts;
 //use getopts::Options;
 
+#[derive(PartialEq, Copy, Clone)]
+pub enum Mode {
+    Command,
+    Replace,
+    TypeCommand,
+    Insert,
+    TypeSearch,
+    SearchIt
+}
+
 fn main() {
     let mut buf = vec![];
     let mut cursorpos:usize = 0;
@@ -93,7 +103,7 @@ fn main() {
 
     file.read_to_end(&mut buf).ok().expect("File could not be read.");
 
-    let mut mode = 0; // 0 Command mode, 1 replace next char, 2 type a command, 3 Insert, 4 type a search, 5 search it
+    let mut mode = Mode::Command;
 
     draw(&buf, cursorpos, SPALTEN, mode, &command, cursorstate, screenoffset);
 
@@ -104,7 +114,7 @@ fn main() {
     let mut quitnow = 0;
     while quitnow == 0 {
         key = getch() as u8;
-        if mode == 0 { // movement mode
+        if mode == Mode::Command {
             match key{
                 104 => { // Button "h"
                     if cursorstate == 2 { // ascii mode
@@ -171,7 +181,7 @@ fn main() {
                     }
                 },
                 114 => { // Button "r"
-                    mode = 1; // replaces the next char
+                    mode = Mode::Replace;
                 },
                 120 => { // Button "x"
                     if buf.len() > 0 { // remove the current char
@@ -182,11 +192,11 @@ fn main() {
                     }
                 },
                 105 => { // Button "i"
-                    mode = 3; // go to insert mode
+                    mode = Mode::Insert;
                 },
                  58 => { // Button ":"
                      command.clear(); // delete old command
-                     mode = 2; // write a command
+                     mode = Mode::TypeCommand;
                  },
                  74 => { // Button "J"
                      if cursorstate == 2 { // ascii mode
@@ -201,7 +211,7 @@ fn main() {
                  },
                  47 => { //TODO
                      command.clear();
-                     mode = 4;
+                     mode = Mode::TypeSearch;
                  },
                 _ => (),
             }
@@ -215,14 +225,14 @@ fn main() {
             }
 
         } else
-        if mode == 1 && cursorstate == 2 { // r was pressed so replace next char in ascii mode
+        if mode == Mode::Replace && cursorstate == 2 { // r was pressed so replace next char in ascii mode
             match key {
                 c @ 32...126 => { buf[cursorpos] = c },
                 _ => (),
             }
-            mode = 0;
+            mode = Mode::Command;
         } else
-        if mode == 1 {
+        if mode == Mode::Replace {
             let mask = if cursorstate == 0 { 0x0F } else { 0xF0 };
             let shift = if cursorstate == 0 { 4 } else { 0 };
             match key { // Change the selected nibble
@@ -234,12 +244,12 @@ fn main() {
                     { buf[cursorpos] = buf[cursorpos]&mask | (c-48)<<shift },
                 _ => ()
             }
-            mode = 0;
+            mode = Mode::Command;
         } else
-        if mode == 2 {
+        if mode == Mode::TypeCommand {
             match key {
                 c @ 32...126 => { command.push(c as char); },
-                27 => {command.clear();mode = 0;},
+                27 => {command.clear();mode = Mode::Command;},
                 10 => { // Enter pressed, compute command!
                         if (command == "w".to_string()) || (command == "wq".to_string()) {
                             file.seek(SeekFrom::Start(0)).ok().expect("Filepointer could not be set to 0");
@@ -247,7 +257,7 @@ fn main() {
                             if command == "wq".to_string() {
                                 quitnow = 1;
                             }
-                            command.clear();mode = 0;
+                            command.clear();mode = Mode::Command;
                         }
                         else if command == "q".to_string() {
                             quitnow = 1;
@@ -255,13 +265,13 @@ fn main() {
                         else {
                             command.clear();
                             command.push_str("Bad_command!");
-                            mode = 0;
+                            mode = Mode::Command;
                         }
                     },
                 _ => (),
             }
         } else
-        if mode == 3 {
+        if mode == Mode::Insert {
             if cursorstate == 0 { // Left nibble
                 match key {
                     c @ 65... 70 => // A-F
@@ -270,7 +280,7 @@ fn main() {
                         {buf.insert(cursorpos, (c-87)<<4 ); cursorstate = 1;},
                     c @ 48... 57 => // 0-9
                         {buf.insert(cursorpos, (c-48)<<4 ); cursorstate = 1;},
-                    27 => {mode = 0;},
+                    27 => {mode = Mode::Command;},
                     _ => ()
                 }
             } else
@@ -282,34 +292,34 @@ fn main() {
                         { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-87); cursorstate = 0; cursorpos+=1; },
                     c @ 48...57 => // 0-9
                         { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-48); cursorstate = 0; cursorpos+=1; },
-                    27 => {mode = 0;},
+                    27 => {mode = Mode::Command;},
                     _ => ()
                 }
             } else
             if cursorstate == 2 { // Ascii
                 match key {
                     c @ 32...126 => { buf.insert(cursorpos, c); cursorpos+=1; },
-                    27 => {mode = 0;},
+                    27 => {mode = Mode::Command;},
                     _ => (),
                 }
             }
         } else
-        if mode == 4 {
+        if mode == Mode::TypeSearch {
 //            if cursorstate == 2 { // Ascii search
                 match key {
                     c @ 32...126 => { command.push(c as char); },
-                    27 => {command.clear();mode = 0;},
+                    27 => {command.clear();mode = Mode::Command;},
                     10 => { // Enter pressed, compute command!
-                        mode = 5;
+                        mode = Mode::SearchIt;
                     }
                     _ => (),
                 }
 //            }
 
-            if mode == 5 {
+            if mode == Mode::SearchIt {
                 let search = command.as_bytes();
                 cursorpos = buf.find_subset(&search).unwrap_or(0);
-                mode = 0;
+                mode = Mode::Command;
                     //command.push_str("Bad_command!");
             }
         }
