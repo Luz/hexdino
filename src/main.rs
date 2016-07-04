@@ -318,7 +318,7 @@ fn main() {
 
             if mode == Mode::SearchIt {
                 let search = command.as_bytes();
-                cursorpos = buf.find_subset(&search).unwrap_or(0);
+                cursorpos = buf.find_subset(&search).unwrap_or(cursorpos);
                 mode = Mode::Command;
                     //command.push_str("Bad_command!");
             }
