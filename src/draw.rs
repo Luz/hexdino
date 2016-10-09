@@ -8,13 +8,16 @@ pub fn draw(buf:&Vec<u8>, cursorpos:usize, cols:usize, mode:Mode, command:&Strin
     let screenheight : usize = getmaxy(stdscr) as usize;
 
     let mut rows = buf.len() / cols;
-    if rows >= screenheight-1 { // Last line reserved for Status/Commands/etc (Like in vim)
+    // Last line reserved for Status/Commands/etc (Like in vim)
+    if rows >= screenheight-1 {
         rows = screenheight-2;
     }
 
     for z in 0 .. rows+1 {
-        printw(&format!("{:08X}: ", get_line(cols, screenoffset, z))); // 8 hex digits (4GB/cols or 0.25GB@cols=SPALTEN)
-        printw(" "); // Additional space between line number and hex
+        // 8 hex digits (4GB/cols or 0.25GB@cols=SPALTEN)
+        printw(&format!("{:08X}: ", get_line(cols, screenoffset, z)));
+        // Additional space between line number and hex
+        printw(" ");
         for s in 0 .. cols {
             let pos:usize = get_pos(cols, screenoffset, z, s);
             if pos < buf.len() {
@@ -44,39 +47,48 @@ pub fn draw(buf:&Vec<u8>, cursorpos:usize, cols:usize, mode:Mode, command:&Strin
                 printw("-- ");
             }
         }
-        printw(" "); // Additional space between hex and ascii
+        // Additional space between hex and ascii
+        printw(" ");
         for s in 0 .. cols {
             let pos:usize = get_pos(cols, screenoffset, z, s);
             color_ascii_cond(true, pos==cursorpos, cursorstate);
             if pos < buf.len() {
                 if let c @ 32...126 = buf[pos] {
                     if c as char == '%' {
-                        printw("%%"); // '%' needs to be escaped by a '%' in ncurses
+                        // '%' needs to be escaped by a '%' in ncurses
+                        printw("%%");
                     } else {
                         printw(&format!("{}", c as char) );
                     }
+                } else {
+                    // Mark non-ascii symbols
+                    printw(&format!("."));
                 }
-                else {printw(&format!(".") );} // Mark non-ascii symbols
-            } else
-            if pos == buf.len() {
-                printw(" "); // Pad ascii with spaces
+            } else if pos == buf.len() {
+                // Pad ascii with spaces
+                printw(" ");
             }
 
             color_ascii_cond(false, pos==cursorpos, cursorstate);
         }
         printw("\n");
     }
-    for _ in 0 .. screenheight-rows-2 { // TODO: check if "rows" is better
-        printw("\n"); // Put the cursor on last line of terminal
+    // TODO: check if "rows" is better
+    for _ in 0 .. screenheight-rows-2 {
+        // Put the cursor on last line of terminal
+        printw("\n");
     }
     if mode == Mode::TypeCommand {
-        printw(":"); // Indicate that a command can be typed in
+        // Indicate that a command can be typed in
+        printw(":");
     }
     if mode == Mode::Insert {
-        printw("insert"); // Indicate that insert mode is active
+        // Indicate that insert mode is active
+        printw("insert");
     }
     if mode == Mode::TypeSearch {
-        printw("/"); // indicate that the search mode is active
+        // indicate that the search mode is active
+        printw("/");
     }
     printw(&format!("{}", command));
 }

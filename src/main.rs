@@ -35,14 +35,18 @@ pub enum Mode {
 fn main() {
     let mut buf = vec![];
     let mut cursorpos:usize = 0;
-    let mut cursorstate:usize = 0; //0 is left nibble, 1 is right nibble, 2 is ascii
-    let mut screenoffset:usize = 0; // 0 = display data from first line of file
+    //0 is left nibble, 1 is right nibble, 2 is ascii
+    let mut cursorstate:usize = 0;
+    // 0 = display data from first line of file
+    let mut screenoffset:usize = 0;
     const SPALTEN:usize = 16;
     let mut command = String::new();
 
-    initscr(); //start ncursesw
+    //start ncursesw
+    initscr();
     let screenheight : usize = getmaxy(stdscr) as usize;
-    cbreak();  //ctrl+z and fg works with this
+    //ctrl+z and fg works with this
+    cbreak();
     noecho();
     start_color();
     init_pair(1, COLOR_GREEN, COLOR_BLACK);
