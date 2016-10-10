@@ -228,15 +228,14 @@ fn main() {
                 screenoffset-=1; // move screen
             }
 
-        } else
-        if mode == Mode::Replace && cursorstate == 2 { // r was pressed so replace next char in ascii mode
+        } else if mode == Mode::Replace && cursorstate == 2 {
+            // r was pressed so replace next char in ascii mode
             match key {
                 c @ 32...126 => { buf[cursorpos] = c },
                 _ => (),
             }
             mode = Mode::Command;
-        } else
-        if mode == Mode::Replace {
+        } else if mode == Mode::Replace {
             let mask = if cursorstate == 0 { 0x0F } else { 0xF0 };
             let shift = if cursorstate == 0 { 4 } else { 0 };
             // Change the selected nibble
@@ -250,8 +249,7 @@ fn main() {
                 _ => ()
             }
             mode = Mode::Command;
-        } else
-        if mode == Mode::TypeCommand {
+        } else if mode == Mode::TypeCommand {
             match key {
                 c @ 32...126 => { command.push(c as char); },
                 27 => {command.clear();mode = Mode::Command;},
@@ -275,8 +273,7 @@ fn main() {
                     },
                 _ => (),
             }
-        } else
-        if mode == Mode::Insert {
+        } else if mode == Mode::Insert {
             if cursorstate == 0 { // Left nibble
                 match key {
                     c @ 65... 70 => // A-F
@@ -288,8 +285,7 @@ fn main() {
                     27 => {mode = Mode::Command;},
                     _ => ()
                 }
-            } else
-            if cursorstate == 1 { // Right nibble
+            } else if cursorstate == 1 { // Right nibble
                 match key {
                     c @ 65...70 => // A-F
                         { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-55); cursorstate = 0; cursorpos+=1; },
@@ -300,16 +296,14 @@ fn main() {
                     27 => {mode = Mode::Command;},
                     _ => ()
                 }
-            } else
-            if cursorstate == 2 { // Ascii
+            } else if cursorstate == 2 { // Ascii
                 match key {
                     c @ 32...126 => { buf.insert(cursorpos, c); cursorpos+=1; },
                     27 => {mode = Mode::Command;},
                     _ => (),
                 }
             }
-        } else
-        if mode == Mode::TypeSearch {
+        } else if mode == Mode::TypeSearch {
 //            if cursorstate == 2 { // Ascii search
                 match key {
                     c @ 32...126 => { command.push(c as char); },
