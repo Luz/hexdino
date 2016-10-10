@@ -119,8 +119,8 @@ fn main() {
     while quitnow == 0 {
         key = getch() as u8;
         if mode == Mode::Command {
-            match key{
-                104 => { // Button "h"
+            match key as char {
+                'h' => {
                     if cursorstate == 2 { // ascii mode
                         if cursorpos > 0 { // not at start
                             cursorpos-=1; // go left
@@ -136,7 +136,7 @@ fn main() {
                         }
                     }
                 },
-                106 => { //Button "j"
+                'j' => {
                     if cursorpos+SPALTEN < buf.len() { // not at end
                         cursorpos+=SPALTEN; // go down
                     }
@@ -146,12 +146,12 @@ fn main() {
                         }
                     }
                 },
-                107 => { //Button "k"
+                'k' => {
                     if cursorpos >= SPALTEN {
                         cursorpos-=SPALTEN;
                     }
                 },
-                108 => { // Button "l"
+                'l' => {
                     if cursorstate == 2 { // ascii mode
                         if cursorpos < buf.len()-1 { // not at end
                             cursorpos+=1; // go right
@@ -167,13 +167,13 @@ fn main() {
                         }
                     }
                 },
-                 48 => { // Button "0"
+                 '0' => {
                     cursorpos -= cursorpos%SPALTEN; // jump to start of line
                     if cursorstate == 1 { // hex mode, right nibble
                         cursorstate = 0; // left nibble
                     }
                 },
-                 36 => { // Button "$"
+                 '$' => {
                     if cursorpos-(cursorpos%SPALTEN)+(SPALTEN-1) < buf.len() { // check if no overflow
                         cursorpos = cursorpos-(cursorpos%SPALTEN)+(SPALTEN-1); // jump to end of line
                     }
@@ -184,10 +184,10 @@ fn main() {
                         cursorstate = 1; // right nibble
                     }
                 },
-                114 => { // Button "r"
+                'r' => {
                     mode = Mode::Replace;
                 },
-                120 => { // Button "x"
+                'x' => {
                     if buf.len() > 0 { // remove the current char
                         buf.remove(cursorpos);
                         if cursorpos >= buf.len() {
@@ -195,14 +195,14 @@ fn main() {
                         }
                     }
                 },
-                105 => { // Button "i"
+                'i' => {
                     mode = Mode::Insert;
                 },
-                 58 => { // Button ":"
+                 ':' => {
                      command.clear(); // delete old command
                      mode = Mode::TypeCommand;
                  },
-                 74 => { // Button "J"
+                 'J' => {
                      if cursorstate == 2 { // ascii mode
                          cursorstate = 0; // hex mode, left nibble
                      }
@@ -210,10 +210,10 @@ fn main() {
                          cursorstate = 2; // jump to ascii
                      }
                  },
-                 63 => { //TODO
+                 '?' => { //TODO
                      command.push_str("No helpfile yet");
                  },
-                 47 => { //TODO
+                 '/' => { //TODO
                      command.clear();
                      mode = Mode::TypeSearch;
                  },
@@ -239,13 +239,14 @@ fn main() {
         if mode == Mode::Replace {
             let mask = if cursorstate == 0 { 0x0F } else { 0xF0 };
             let shift = if cursorstate == 0 { 4 } else { 0 };
-            match key { // Change the selected nibble
-                c @ 65... 70 => // A-F
-                    { buf[cursorpos] = buf[cursorpos]&mask | (c-55)<<shift },
-                c @ 97...102 => // a-f
-                    { buf[cursorpos] = buf[cursorpos]&mask | (c-87)<<shift },
-                c @ 48... 57 => // 0-9
-                    { buf[cursorpos] = buf[cursorpos]&mask | (c-48)<<shift },
+            // Change the selected nibble
+            match key as char {
+                c @ 'A'...'F' =>
+                    { buf[cursorpos] = buf[cursorpos]&mask | (c as u8 - 55)<<shift },
+                c @ 'a'...'f' =>
+                    { buf[cursorpos] = buf[cursorpos]&mask | (c as u8 - 87)<<shift },
+                c @ '0'...'9' =>
+                    { buf[cursorpos] = buf[cursorpos]&mask | (c as u8 - 48)<<shift },
                 _ => ()
             }
             mode = Mode::Command;
