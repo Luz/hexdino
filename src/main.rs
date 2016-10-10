@@ -239,14 +239,8 @@ fn main() {
             let mask = if cursorstate == 0 { 0x0F } else { 0xF0 };
             let shift = if cursorstate == 0 { 4 } else { 0 };
             // Change the selected nibble
-            match key as char {
-                c @ 'A'...'F' =>
-                    { buf[cursorpos] = buf[cursorpos]&mask | (c as u8 - 55)<<shift },
-                c @ 'a'...'f' =>
-                    { buf[cursorpos] = buf[cursorpos]&mask | (c as u8 - 87)<<shift },
-                c @ '0'...'9' =>
-                    { buf[cursorpos] = buf[cursorpos]&mask | (c as u8 - 48)<<shift },
-                _ => ()
+            if let Some(c) = (key as char).to_digit(16) {
+                buf[cursorpos] = buf[cursorpos] & mask | (c as u8) << shift;
             }
             mode = Mode::Command;
         } else if mode == Mode::TypeCommand {
