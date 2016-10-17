@@ -30,6 +30,7 @@ pub enum Mode {
     Insert,
     TypeSearch,
     SearchIt,
+    SearchItHex,
 }
 
 fn main() {
@@ -341,7 +342,11 @@ fn main() {
                 }
                 10 => {
                     // Enter pressed, compute command!
-                    mode = Mode::SearchIt;
+                    if cursorstate == 2 {
+                        mode = Mode::SearchIt;
+                    } else {
+                        mode = Mode::SearchItHex;
+                    }
                 }
                 _ => (),
             }
@@ -352,6 +357,11 @@ fn main() {
                 cursorpos = buf.find_subset(&search).unwrap_or(cursorpos);
                 mode = Mode::Command;
                 // command.push_str("Bad_command!");
+            }
+            if mode == Mode::SearchItHex {
+                // TODO
+                mode = Mode::Command;
+                command.push_str("Hex search not yet implemented!");
             }
         }
         draw(&buf,
