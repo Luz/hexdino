@@ -97,7 +97,8 @@ fn main() {
         return;
     }
 
-    // TODO in this order: 1)disp files 2) hjkl movement 3) edit file by 'r' 4) save file 5) edit file by 'x, i' 6) search by '/'
+    // TODO in this order: 1)disp files 2) hjkl movement 3) edit file by 'r' 4) save file 5) edit
+    // file by 'x, i' 6) search by '/'
 
     let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
         Err(why) => panic!("couldn't open {}: {}", display, Error::description(&why)),
@@ -190,7 +191,8 @@ fn main() {
                 '$' => {
                     if cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1) < buf.len() {
                         // check if no overflow
-                        cursorpos = cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1); // jump to end of line
+                        // jump to end of line
+                        cursorpos = cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1);
                     } else {
                         cursorpos = buf.len() - 1 // jump to end of line
                     }
@@ -295,27 +297,46 @@ fn main() {
         } else if mode == Mode::Insert {
             if cursorstate == 0 {
                 // Left nibble
-                match key {
-                    c @ 65... 70 => // A-F
-                        {buf.insert(cursorpos, (c-55)<<4 ); cursorstate = 1;},
-                    c @ 97...102 => // a-f
-                        {buf.insert(cursorpos, (c-87)<<4 ); cursorstate = 1;},
-                    c @ 48... 57 => // 0-9
-                        {buf.insert(cursorpos, (c-48)<<4 ); cursorstate = 1;},
-                    27 => {mode = Mode::Command;},
-                    _ => ()
+                match key as char {
+                    c @ 'A'...'F' => {
+                        buf.insert(cursorpos, (c as u8 - 55) << 4);
+                        cursorstate = 1;
+                    }
+                    c @ 'a'...'f' => {
+                        buf.insert(cursorpos, (c as u8 - 87) << 4);
+                        cursorstate = 1;
+                    }
+                    c @ '0'...'9' => {
+                        buf.insert(cursorpos, (c as u8 - 48) << 4);
+                        cursorstate = 1;
+                    }
+                    '\u{1B}' => {
+                        mode = Mode::Command;
+                    }
+                    _ => (),
                 }
             } else if cursorstate == 1 {
                 // Right nibble
-                match key {
-                    c @ 65...70 => // A-F
-                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-55); cursorstate = 0; cursorpos+=1; },
-                    c @ 97...102 => // a-f
-                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-87); cursorstate = 0; cursorpos+=1; },
-                    c @ 48...57 => // 0-9
-                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-48); cursorstate = 0; cursorpos+=1; },
-                    27 => {mode = Mode::Command;},
-                    _ => ()
+                match key as char {
+                    c @ 'A'...'F' => {
+                        buf[cursorpos] = buf[cursorpos] & 0xF0 | (c as u8 - 55);
+                        cursorstate = 0;
+                        cursorpos += 1;
+                    }
+                    c @ 'a'...'f' => {
+                        buf[cursorpos] = buf[cursorpos] & 0xF0 | (c as u8 - 87);
+                        cursorstate = 0;
+                        cursorpos += 1;
+                    }
+                    c @ '0'...'9' => {
+                        buf[cursorpos] = buf[cursorpos] & 0xF0 | (c as u8 - 48);
+                        cursorstate = 0;
+                        cursorpos += 1;
+                    }
+                    '\u{1B}' => {
+                        mode = Mode::Command;
+                    }
+                    _ => (),
                 }
             } else if cursorstate == 2 {
                 // Ascii
