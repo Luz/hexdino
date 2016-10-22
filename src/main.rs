@@ -164,7 +164,7 @@ fn main() {
                 'l' => {
                     if cursorstate == 2 {
                         // ascii mode
-                        if cursorpos < buf.len() - 1 {
+                        if cursorpos + 1 < buf.len() {
                             // not at end
                             cursorpos += 1; // go right
                         }
@@ -173,7 +173,7 @@ fn main() {
                         cursorstate = 1; // right nibble
                     } else if cursorstate == 1 {
                         // hex mode, right nibble
-                        if cursorpos < buf.len() - 1 {
+                        if cursorpos + 1 < buf.len() {
                             // not at end
                             cursorstate = 0; // left nibble
                             cursorpos += 1; // go right
@@ -206,8 +206,8 @@ fn main() {
                     if buf.len() > 0 {
                         // remove the current char
                         buf.remove(cursorpos);
-                        if cursorpos >= buf.len() {
-                            cursorpos = buf.len() - 1;
+                        if cursorpos >= buf.len() && cursorpos > 0 {
+                            cursorpos -= 1;
                         }
                     }
                 }
@@ -295,28 +295,16 @@ fn main() {
         } else if mode == Mode::Insert {
             if cursorstate == 0 {
                 // Left nibble
-                match key {
-                    c @ 65... 70 => // A-F
-                        {buf.insert(cursorpos, (c-55)<<4 ); cursorstate = 1;},
-                    c @ 97...102 => // a-f
-                        {buf.insert(cursorpos, (c-87)<<4 ); cursorstate = 1;},
-                    c @ 48... 57 => // 0-9
-                        {buf.insert(cursorpos, (c-48)<<4 ); cursorstate = 1;},
-                    27 => {mode = Mode::Command;},
-                    _ => ()
+                if let Some(c) = (key as char).to_digit(16) {
+                    buf.insert(cursorpos, (c as u8) << 4); cursorstate = 1;
                 }
+                if key == 27 {mode = Mode::Command;};
             } else if cursorstate == 1 {
                 // Right nibble
-                match key {
-                    c @ 65...70 => // A-F
-                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-55); cursorstate = 0; cursorpos+=1; },
-                    c @ 97...102 => // a-f
-                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-87); cursorstate = 0; cursorpos+=1; },
-                    c @ 48...57 => // 0-9
-                        { buf[cursorpos] = buf[cursorpos]&0xF0 | (c-48); cursorstate = 0; cursorpos+=1; },
-                    27 => {mode = Mode::Command;},
-                    _ => ()
+                if let Some(c) = (key as char).to_digit(16) {
+                    buf[cursorpos] = buf[cursorpos]&0xF0 | c as u8; cursorstate = 0; cursorpos+=1;
                 }
+                if key == 27 {mode = Mode::Command;};
             } else if cursorstate == 2 {
                 // Ascii
                 match key {
