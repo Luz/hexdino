@@ -248,6 +248,9 @@ fn main() {
 
         } else if mode == Mode::Replace && cursorstate == 2 {
             // r was pressed so replace next char in ascii mode
+            if cursorpos >= buf.len() {
+                buf.insert(cursorpos, 0 );
+            }
             match key {
                 c @ 32...126 => buf[cursorpos] = c,
                 _ => (),
@@ -256,6 +259,9 @@ fn main() {
         } else if mode == Mode::Replace {
             let mask = if cursorstate == 0 { 0x0F } else { 0xF0 };
             let shift = if cursorstate == 0 { 4 } else { 0 };
+            if cursorpos >= buf.len() {
+                buf.insert(cursorpos, 0 );
+            }
             // Change the selected nibble
             if let Some(c) = (key as char).to_digit(16) {
                 buf[cursorpos] = buf[cursorpos] & mask | (c as u8) << shift;
@@ -301,6 +307,9 @@ fn main() {
                 if key == 27 {mode = Mode::Command;};
             } else if cursorstate == 1 {
                 // Right nibble
+                if cursorpos == buf.len() {
+                    buf.insert(cursorpos, 0 );
+                }
                 if let Some(c) = (key as char).to_digit(16) {
                     buf[cursorpos] = buf[cursorpos]&0xF0 | c as u8; cursorstate = 0; cursorpos+=1;
                 }
