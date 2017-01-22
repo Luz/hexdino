@@ -283,6 +283,7 @@ fn main() {
                             .ok()
                             .expect("Filepointer could not be set to 0");
                         file.write_all(&mut buf).ok().expect("File could not be written.");
+												file.set_len(buf.len() as u64).ok().expect("File could not be set to correct lenght.");
                         if command == "wq".to_string() {
                             quitnow = 1;
                         }
