@@ -52,8 +52,6 @@ fn main() {
     start_color();
     init_pair(1, COLOR_GREEN, COLOR_BLACK);
 
-    printw("Welcome to Hexdino.\nPlease find the any-key on your keyboard and press it.\n");
-
     let args: Vec<_> = env::args().collect();
     // let program = args[0].clone();
     // let mut opts = Options::new();
@@ -78,18 +76,15 @@ fn main() {
     // };
 
     let path = if args.len() > 1 {
-        printw(&format!("Opening file {}", args[1]));
+        command.push_str(&format!("\"{}\"", args[1]));
         args[1].clone()
     } else {
-        printw(&format!("No file specified. Trying to open foo.txt"));
+        command.push_str(&format!("No file specified. Trying to open foo.txt"));
         "foo.txt".into()
     };
 
     let path = Path::new(&path);
     let display = path.display();
-
-    getch();
-    clear();
 
     if !has_colors() {
         endwin();
@@ -283,7 +278,7 @@ fn main() {
                             .ok()
                             .expect("Filepointer could not be set to 0");
                         file.write_all(&mut buf).ok().expect("File could not be written.");
-												file.set_len(buf.len() as u64).ok().expect("File could not be set to correct lenght.");
+                        file.set_len(buf.len() as u64).ok().expect("File could not be set to correct lenght.");
                         if command == "wq".to_string() {
                             quitnow = 1;
                         }
