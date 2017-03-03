@@ -19,8 +19,8 @@ use find::FindSubset;
 extern crate ncurses;
 use ncurses::*;
 
-// extern crate getopts;
-// use getopts::Options;
+extern crate getopts;
+use getopts::Options;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum Mode {
@@ -53,37 +53,33 @@ fn main() {
     init_pair(1, COLOR_GREEN, COLOR_BLACK);
 
     let args: Vec<_> = env::args().collect();
-    // let program = args[0].clone();
-    // let mut opts = Options::new();
-    // opts.optopt("f", "", "set file name", "NAME");
-    // opts.optflag("h", "help", "print this help menu");
-    //
-    // let matches = match opts.parse(&args[1..]) {
-    // Ok(m) => { m }
-    // Err(f) => { panic!(f.to_string()) }
-    // };
-    // if matches.opt_present("h") {
-    // let brief = format!("Usage: {} FILE [options]", program);
-    // print!("{}", opts.usage(&brief));
-    // return;
-    // }
-    // let path = if !matches.free.is_empty() {
-    // matches.free[0].clone()
-    // } else {
-    // let brief = format!("Usage: {} FILE [options]", program);
-    // print!("{}", opts.usage(&brief));
-    // return;
-    // };
+    let program = args[0].clone();
+    let mut opts = Options::new();
+    opts.optflag("h", "help", "print this help menu");
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => { m }
+        Err(f) => {
+            println!("{}", f.to_string());
+            println!("Usage: {} FILE [options]", program);
+            endwin();
+            return;
+        }
+    };
+    if matches.opt_present("h") {
+        println!("Usage: {} FILE [options]", program);
+        endwin();
+        return;
+    }
 
-    let path = if args.len() > 1 {
-        command.push_str(&format!("\"{}\"", args[1]));
-        args[1].clone()
+    let patharg = if !matches.free.is_empty() {
+        command.push_str(&format!("File {} was just opened", matches.free[0].clone()));
+        matches.free[0].clone()
     } else {
-        command.push_str(&format!("No file specified. Trying to open foo.txt"));
-        "foo.txt".into()
+        printw(&format!("Usage: {} FILE [options]", program));
+        String::new()
     };
 
-    let path = Path::new(&path);
+    let path = Path::new(&patharg);
     let display = path.display();
 
     if !has_colors() {
@@ -92,14 +88,13 @@ fn main() {
         return;
     }
 
-    // TODO in this order: 1)disp files 2) hjkl movement 3) edit file by 'r' 4) save file 5) edit file by 'x, i' 6) search by '/'
-
-    let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
-        Err(why) => panic!("couldn't open {}: {}", display, Error::description(&why)),
-        Ok(file) => file,
-    };
-
-    file.read_to_end(&mut buf).ok().expect("File could not be read.");
+    if patharg != "" {
+        let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
+            Err(why) => panic!("couldn't open {}: {}", display, Error::description(&why)),
+            Ok(file) => file,
+        };
+        file.read_to_end(&mut buf).ok().expect("File could not be read.");
+    }
 
     let mut mode = Mode::Command;
 
@@ -274,16 +269,28 @@ fn main() {
                 10 => {
                     // Enter pressed, compute command!
                     if (command == "w".to_string()) || (command == "wq".to_string()) {
-                        file.seek(SeekFrom::Start(0))
-                            .ok()
-                            .expect("Filepointer could not be set to 0");
-                        file.write_all(&mut buf).ok().expect("File could not be written.");
-                        file.set_len(buf.len() as u64).ok().expect("File could not be set to correct lenght.");
-                        if command == "wq".to_string() {
-                            quitnow = 1;
+                        if path.exists() {
+                            let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
+                            Err(why) => panic!("couldn't open {}: {}", display, Error::description(&why)),
+                            Ok(file) => file,
+                            };
+                            file.seek(SeekFrom::Start(0))
+                                .ok()
+                                .expect("Filepointer could not be set to 0");
+                            file.write_all(&mut buf).ok().expect("File could not be written.");
+                            file.set_len(buf.len() as u64).ok().expect("File could not be set to correct lenght.");
+                            if command == "wq".to_string() {
+                                quitnow = 1;
+                            }
+                        } else {
+                            command.clear();
+                            command.push_str("No filename specified! Not saved yet!");
+//TODO: define filename during runtime
                         }
-                        command.clear();
-                        mode = Mode::Command;
+                        if command == "w".to_string() {
+                            command.clear();
+                            mode = Mode::Command;
+                        }
                     } else if command == "q".to_string() {
                         quitnow = 1;
                     } else {
