@@ -33,11 +33,17 @@ pub enum Mode {
     SearchItHex,
 }
 
+#[derive(PartialEq, Copy, Clone)]
+pub enum Cursorstate {
+    Leftnibble,
+    Rightnibble,
+    Asciichar,
+}
+
 fn main() {
     let mut buf = vec![];
     let mut cursorpos: usize = 0;
-    // 0 is left nibble, 1 is right nibble, 2 is ascii
-    let mut cursorstate: usize = 0;
+    let mut cstate: Cursorstate = Cursorstate::Leftnibble;
     // 0 = display data from first line of file
     let mut screenoffset: usize = 0;
     const SPALTEN: usize = 16;
@@ -103,7 +109,7 @@ fn main() {
          SPALTEN,
          mode,
          &command,
-         cursorstate,
+         cstate,
          screenoffset);
 
     let mut key;
@@ -116,20 +122,18 @@ fn main() {
         if mode == Mode::Command {
             match key as char {
                 'h' => {
-                    if cursorstate == 2 {
+                    if cstate == Cursorstate::Asciichar {
                         // ascii mode
                         if cursorpos > 0 {
                             // not at start
                             cursorpos -= 1; // go left
                         }
-                    } else if cursorstate == 1 {
-                        // hex mode, right nibble
-                        cursorstate = 0; // left nibble
-                    } else if cursorstate == 0 {
-                        // hex mode, left nibble
+                    } else if cstate == Cursorstate::Rightnibble {
+                        cstate = Cursorstate::Leftnibble;
+                    } else if cstate == Cursorstate::Leftnibble {
                         if cursorpos > 0 {
                             // not at start
-                            cursorstate = 1; // right nibble
+                            cstate = Cursorstate::Rightnibble;
                             cursorpos -= 1; // go left
                         }
                     }
@@ -152,29 +156,26 @@ fn main() {
                     }
                 }
                 'l' => {
-                    if cursorstate == 2 {
+                    if cstate == Cursorstate::Asciichar {
                         // ascii mode
                         if cursorpos + 1 < buf.len() {
                             // not at end
                             cursorpos += 1; // go right
                         }
-                    } else if cursorstate == 0 {
-                        // hex mode, left nibble
-                        cursorstate = 1; // right nibble
-                    } else if cursorstate == 1 {
-                        // hex mode, right nibble
+                    } else if cstate == Cursorstate::Leftnibble {
+                        cstate = Cursorstate::Rightnibble;
+                    } else if cstate == Cursorstate::Rightnibble {
                         if cursorpos + 1 < buf.len() {
                             // not at end
-                            cursorstate = 0; // left nibble
+                            cstate = Cursorstate::Leftnibble;
                             cursorpos += 1; // go right
                         }
                     }
                 }
                 '0' => {
                     cursorpos -= cursorpos % SPALTEN; // jump to start of line
-                    if cursorstate == 1 {
-                        // hex mode, right nibble
-                        cursorstate = 0; // left nibble
+                    if cstate == Cursorstate::Rightnibble {
+                        cstate = Cursorstate::Leftnibble;
                     }
                 }
                 '$' => {
@@ -184,9 +185,8 @@ fn main() {
                     } else {
                         cursorpos = buf.len() - 1 // jump to end of line
                     }
-                    if cursorstate == 0 {
-                        // hex mode, left nibble
-                        cursorstate = 1; // right nibble
+                    if cstate == Cursorstate::Leftnibble {
+                        cstate = Cursorstate::Rightnibble;
                     }
                 }
                 'r' => {
@@ -209,11 +209,10 @@ fn main() {
                     mode = Mode::TypeCommand;
                 }
                 'J' => {
-                    if cursorstate == 2 {
-                        // ascii mode
-                        cursorstate = 0; // hex mode, left nibble
+                    if cstate == Cursorstate::Asciichar {
+                        cstate = Cursorstate::Leftnibble;
                     } else {
-                        cursorstate = 2; // jump to ascii
+                        cstate = Cursorstate::Asciichar;
                     }
                 }
                 '?' => {
@@ -236,7 +235,7 @@ fn main() {
                 screenoffset -= 1; // move screen
             }
 
-        } else if mode == Mode::Replace && cursorstate == 2 {
+        } else if mode == Mode::Replace && cstate == Cursorstate::Asciichar {
             // r was pressed so replace next char in ascii mode
             if cursorpos >= buf.len() {
                 buf.insert(cursorpos, 0 );
@@ -247,8 +246,8 @@ fn main() {
             }
             mode = Mode::Command;
         } else if mode == Mode::Replace {
-            let mask = if cursorstate == 0 { 0x0F } else { 0xF0 };
-            let shift = if cursorstate == 0 { 4 } else { 0 };
+            let mask = if cstate == Cursorstate::Leftnibble { 0x0F } else { 0xF0 };
+            let shift = if cstate == Cursorstate::Leftnibble { 4 } else { 0 };
             if cursorpos >= buf.len() {
                 buf.insert(cursorpos, 0 );
             }
@@ -302,22 +301,22 @@ fn main() {
                 _ => (),
             }
         } else if mode == Mode::Insert {
-            if cursorstate == 0 {
+            if cstate == Cursorstate::Leftnibble {
                 // Left nibble
                 if let Some(c) = (key as char).to_digit(16) {
-                    buf.insert(cursorpos, (c as u8) << 4); cursorstate = 1;
+                    buf.insert(cursorpos, (c as u8) << 4); cstate = Cursorstate::Rightnibble;
                 }
                 if key == 27 {mode = Mode::Command;};
-            } else if cursorstate == 1 {
+            } else if cstate == Cursorstate::Rightnibble {
                 // Right nibble
                 if cursorpos == buf.len() {
                     buf.insert(cursorpos, 0 );
                 }
                 if let Some(c) = (key as char).to_digit(16) {
-                    buf[cursorpos] = buf[cursorpos]&0xF0 | c as u8; cursorstate = 0; cursorpos+=1;
+                    buf[cursorpos] = buf[cursorpos]&0xF0 | c as u8; cstate = Cursorstate::Leftnibble; cursorpos+=1;
                 }
                 if key == 27 {mode = Mode::Command;};
-            } else if cursorstate == 2 {
+            } else if cstate == Cursorstate::Asciichar {
                 // Ascii
                 match key {
                     c @ 32...126 => {
@@ -331,7 +330,7 @@ fn main() {
                 }
             }
         } else if mode == Mode::TypeSearch {
-            //            if cursorstate == 2 { // Ascii search
+            //            if cstate == Cursorstate::Asciichar { // Ascii search
             match key {
                 c @ 32...126 => {
                     command.push(c as char);
@@ -342,7 +341,7 @@ fn main() {
                 }
                 10 => {
                     // Enter pressed, compute command!
-                    if cursorstate == 2 {
+                    if cstate == Cursorstate::Asciichar {
                         mode = Mode::SearchIt;
                     } else {
                         mode = Mode::SearchItHex;
@@ -369,7 +368,7 @@ fn main() {
              SPALTEN,
              mode,
              &command,
-             cursorstate,
+             cstate,
              screenoffset);
     }
 
