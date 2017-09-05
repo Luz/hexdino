@@ -51,7 +51,10 @@ fn main() {
 
     // start ncursesw
     initscr();
-    let screenheight: usize = getmaxy(stdscr) as usize;
+    let screenheight: usize;
+    unsafe {
+      screenheight = getmaxy(stdscr) as usize;
+    }
     // ctrl+z and fg works with this
     cbreak();
     noecho();

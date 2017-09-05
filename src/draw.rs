@@ -12,7 +12,10 @@ pub fn draw(buf: &Vec<u8>,
             screenoffset: usize) {
     erase();
 
-    let screenheight: usize = getmaxy(stdscr) as usize;
+    let screenheight: usize;
+    unsafe {
+      screenheight = getmaxy(stdscr) as usize;
+    }
 
     let mut rows = buf.len() / cols;
     // Last line reserved for Status/Commands/etc (Like in vim)
