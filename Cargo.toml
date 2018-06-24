@@ -5,6 +5,6 @@ authors = ["Luz"]
 
 [dependencies]
 libc = "^0.2"
-ncurses = "5"
+ncurses = "~5.91"
 getopts = "0.2"
 
