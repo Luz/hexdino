@@ -22,16 +22,15 @@ use ncurses::*;
 extern crate getopts;
 use getopts::Options;
 
-#[derive(PartialEq, Copy, Clone)]
-pub enum Mode {
-    Command,
-    Replace,
-    TypeCommand,
-    Insert,
-    TypeSearch,
-    SearchIt,
-    SearchItHex,
-}
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+
+use pest::Parser;
+
+#[derive(Parser)]
+#[grammar = "cmd.pest"]
+struct IdentParser;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum Cursorstate {
@@ -63,7 +62,7 @@ fn main() {
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
+        Ok(m) => m,
         Err(f) => {
             println!("{}", f.to_string());
             println!("Usage: {} FILE [options]", program);
@@ -95,38 +94,57 @@ fn main() {
     }
 
     if patharg != "" {
-        let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
+        let mut file = match OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(&path) {
             Err(why) => panic!("couldn't open {}: {}", display, Error::description(&why)),
             Ok(file) => file,
         };
-        file.read_to_end(&mut buf).ok().expect("File could not be read.");
+        file.read_to_end(&mut buf).ok().expect(
+            "File could not be read.",
+        );
     }
 
-    let mut mode = Mode::Command;
+    draw(&buf, cursorpos, SPALTEN, &command, cstate, screenoffset);
 
-    draw(&buf,
-         cursorpos,
-         SPALTEN,
-         mode,
-         &command,
-         cstate,
-         screenoffset);
+    let mut quitnow = false;
+    while quitnow == false {
+        let key = std::char::from_u32(getch() as u32).unwrap();
+        printw(&format!("   {:?}   ", key));
+        command.push_str(&key.clone().to_string());
 
-    let mut key;
-    //    key = getch() as u8;
-    //    printw(&format!("{:?}", key));
+        let parsethisstring = command.clone();
+        let commands = IdentParser::parse(Rule::cmd_list, &parsethisstring)
+            .unwrap_or_else(|e| panic!("{}", e));
 
-    let mut quitnow = 0;
-    while quitnow == 0 {
-        key = getch() as u8;
-        if mode == Mode::Command {
-            match key as char {
-                'h' => {
+        let mut clear = true;
+        let mut save = false;
+        for cmd in commands {
+            match cmd.as_rule() {
+                Rule::down => {
+                    printw(&format!("{:?}", cmd.as_rule()));
+                    if cursorpos + SPALTEN < buf.len() {
+                        // not at end
+                        cursorpos += SPALTEN;
+                    } else {
+                        // when at end
+                        if buf.len() != 0 {
+                            // Suppress underflow
+                            cursorpos = buf.len() - 1;
+                        }
+                    }
+                }
+                Rule::up => {
+                    if cursorpos >= SPALTEN {
+                        cursorpos -= SPALTEN;
+                    }
+                }
+                Rule::left => {
                     if cstate == Cursorstate::Asciichar {
-                        // ascii mode
                         if cursorpos > 0 {
-                            // not at start
-                            cursorpos -= 1; // go left
+                            cursorpos -= 1;
                         }
                     } else if cstate == Cursorstate::Rightnibble {
                         cstate = Cursorstate::Leftnibble;
@@ -134,33 +152,15 @@ fn main() {
                         if cursorpos > 0 {
                             // not at start
                             cstate = Cursorstate::Rightnibble;
-                            cursorpos -= 1; // go left
+                            cursorpos -= 1;
                         }
                     }
                 }
-                'j' => {
-                    if cursorpos + SPALTEN < buf.len() {
-                        // not at end
-                        cursorpos += SPALTEN; // go down
-                    } else {
-                        // when at end
-                        if buf.len() != 0 {
-                            // Suppress underflow
-                            cursorpos = buf.len() - 1; // go to end
-                        }
-                    }
-                }
-                'k' => {
-                    if cursorpos >= SPALTEN {
-                        cursorpos -= SPALTEN;
-                    }
-                }
-                'l' => {
+                Rule::right => {
                     if cstate == Cursorstate::Asciichar {
-                        // ascii mode
                         if cursorpos + 1 < buf.len() {
                             // not at end
-                            cursorpos += 1; // go right
+                            cursorpos += 1;
                         }
                     } else if cstate == Cursorstate::Leftnibble {
                         cstate = Cursorstate::Rightnibble;
@@ -168,31 +168,34 @@ fn main() {
                         if cursorpos + 1 < buf.len() {
                             // not at end
                             cstate = Cursorstate::Leftnibble;
-                            cursorpos += 1; // go right
+                            cursorpos += 1;
                         }
                     }
                 }
-                '0' => {
+                Rule::start => {
                     cursorpos -= cursorpos % SPALTEN; // jump to start of line
                     if cstate == Cursorstate::Rightnibble {
                         cstate = Cursorstate::Leftnibble;
                     }
                 }
-                '$' => {
+                Rule::end => {
+                    // check if no overflow
                     if cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1) < buf.len() {
-                        // check if no overflow
-                        cursorpos = cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1); // jump to end of line
+                        // jump to end of line
+                        cursorpos = cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1);
                     } else {
-                        cursorpos = buf.len() - 1 // jump to end of line
+                        // jump to end of line
+                        cursorpos = buf.len() - 1
                     }
                     if cstate == Cursorstate::Leftnibble {
                         cstate = Cursorstate::Rightnibble;
                     }
                 }
-                'r' => {
-                    mode = Mode::Replace;
+                Rule::replace => {
+                    // printw("next char will be the replacement!");
+                    clear = false;
                 }
-                'x' => {
+                Rule::remove => {
                     if buf.len() > 0 {
                         // remove the current char
                         buf.remove(cursorpos);
@@ -201,30 +204,132 @@ fn main() {
                         }
                     }
                 }
-                'i' => {
-                    mode = Mode::Insert;
+                Rule::insert => {
+                    printw("next chars will be inserted!");
+                    clear = false;
                 }
-                ':' => {
-                    command.clear(); // delete old command
-                    mode = Mode::TypeCommand;
-                }
-                'J' => {
+                Rule::jumpascii => {
                     if cstate == Cursorstate::Asciichar {
                         cstate = Cursorstate::Leftnibble;
                     } else {
                         cstate = Cursorstate::Asciichar;
                     }
                 }
-                '?' => {
-                    // TODO
+                Rule::helpfile => {
                     command.push_str("No helpfile yet");
                 }
-                '/' => {
-                    // TODO
-                    command.clear();
-                    mode = Mode::TypeSearch;
-                }
+                Rule::search => (),
                 _ => (),
+            }
+
+            for inner_cmd in cmd.into_inner() {
+                match inner_cmd.as_rule() {
+                    Rule::replacement => {
+                        // TODO: use inner_cmd and not just "key"
+                        // printw(&format!("Replacement: {:?}", inner_cmd.as_str()));
+                        if cstate == Cursorstate::Asciichar {
+                            if cursorpos >= buf.len() {
+                                buf.insert(cursorpos, 0);
+                            }
+                            // buf[cursorpos] = inner_cmd.as_str();
+                            buf[cursorpos] = key as u8;
+                        } else {
+                            let mask = if cstate == Cursorstate::Leftnibble {
+                                0x0F
+                            } else {
+                                0xF0
+                            };
+                            let shift = if cstate == Cursorstate::Leftnibble {
+                                4
+                            } else {
+                                0
+                            };
+                            if cursorpos >= buf.len() {
+                                buf.insert(cursorpos, 0);
+                            }
+                            // Change the selected nibble
+                            if let Some(c) = key.to_digit(16) {
+                                buf[cursorpos] = buf[cursorpos] & mask | (c as u8) << shift;
+                            }
+                        }
+
+                    }
+                    // TODO: use inner_cmd and not just "key"
+                    Rule::insertment => {
+                        // printw(&format!("Inserted: {:?}", inner_cmd.as_str()));
+                        command.pop(); // remove the just inserted thing
+                        clear = false;
+
+                        if cstate == Cursorstate::Leftnibble {
+                            // Left nibble
+                            if let Some(c) = (key as char).to_digit(16) {
+                                buf.insert(cursorpos, (c as u8) << 4);
+                                cstate = Cursorstate::Rightnibble;
+                            }
+                        } else if cstate == Cursorstate::Rightnibble {
+                            // Right nibble
+                            if cursorpos == buf.len() {
+                                buf.insert(cursorpos, 0);
+                            }
+                            if let Some(c) = (key as char).to_digit(16) {
+                                buf[cursorpos] = buf[cursorpos] & 0xF0 | c as u8;
+                                cstate = Cursorstate::Leftnibble;
+                                cursorpos += 1;
+                            }
+                        } else if cstate == Cursorstate::Asciichar {
+                            buf.insert(cursorpos, key as u8);
+                            cursorpos += 1;
+                        }
+                    }
+                    Rule::searchstr => {
+                        // printw(&format!("Searching for: {:?}", inner_cmd.as_str() ))
+                        let search = inner_cmd.as_str().as_bytes();
+                        cursorpos = buf.find_subset(&search).unwrap_or(cursorpos);
+                    }
+                    Rule::saveandexit => {
+                        save = true;
+                        quitnow = true;
+                    }
+                    Rule::exit => quitnow = true,
+                    Rule::save => save = true,
+                    Rule::escape => (),
+                    Rule::gatherone => clear = false,
+                    _ => {
+                        command.push_str(&format!("no rule for {:?} ", inner_cmd.as_rule()));
+                        clear = false;
+                    }
+                };
+            }
+            if save {
+                if path.exists() {
+                    let mut file = match OpenOptions::new()
+                        .read(true)
+                        .write(true)
+                        .create(true)
+                        .open(&path) {
+                        Err(why) => {
+                            panic!("couldn't open {}: {}", display, Error::description(&why))
+                        }
+                        Ok(file) => file,
+                    };
+                    file.seek(SeekFrom::Start(0)).ok().expect(
+                        "Filepointer could not be set to 0",
+                    );
+                    file.write_all(&mut buf).ok().expect(
+                        "File could not be written.",
+                    );
+                    file.set_len(buf.len() as u64).ok().expect(
+                        "File could not be set to correct lenght.",
+                    );
+                    command.push_str("File saved!");
+                } else {
+                    command.push_str("path.exists() failed");
+                }
+                // TODO: define filename during runtime
+                save = false;
+            }
+            if clear {
+                command.clear();
             }
 
             // Always move screen when cursor leaves screen
@@ -235,141 +340,10 @@ fn main() {
                 screenoffset -= 1; // move screen
             }
 
-        } else if mode == Mode::Replace && cstate == Cursorstate::Asciichar {
-            // r was pressed so replace next char in ascii mode
-            if cursorpos >= buf.len() {
-                buf.insert(cursorpos, 0 );
-            }
-            match key {
-                c @ 32...126 => buf[cursorpos] = c,
-                _ => (),
-            }
-            mode = Mode::Command;
-        } else if mode == Mode::Replace {
-            let mask = if cstate == Cursorstate::Leftnibble { 0x0F } else { 0xF0 };
-            let shift = if cstate == Cursorstate::Leftnibble { 4 } else { 0 };
-            if cursorpos >= buf.len() {
-                buf.insert(cursorpos, 0 );
-            }
-            // Change the selected nibble
-            if let Some(c) = (key as char).to_digit(16) {
-                buf[cursorpos] = buf[cursorpos] & mask | (c as u8) << shift;
-            }
-            mode = Mode::Command;
-        } else if mode == Mode::TypeCommand {
-            match key {
-                c @ 32...126 => {
-                    command.push(c as char);
-                }
-                27 => {
-                    command.clear();
-                    mode = Mode::Command;
-                }
-                10 => {
-                    // Enter pressed, compute command!
-                    if (command == "w".to_string()) || (command == "wq".to_string()) {
-                        if path.exists() {
-                            let mut file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
-                            Err(why) => panic!("couldn't open {}: {}", display, Error::description(&why)),
-                            Ok(file) => file,
-                            };
-                            file.seek(SeekFrom::Start(0))
-                                .ok()
-                                .expect("Filepointer could not be set to 0");
-                            file.write_all(&mut buf).ok().expect("File could not be written.");
-                            file.set_len(buf.len() as u64).ok().expect("File could not be set to correct lenght.");
-                            if command == "wq".to_string() {
-                                quitnow = 1;
-                            }
-                        } else {
-                            command.clear();
-                            command.push_str("No filename specified! Not saved yet!");
-//TODO: define filename during runtime
-                        }
-                        if command == "w".to_string() {
-                            command.clear();
-                            mode = Mode::Command;
-                        }
-                    } else if command == "q".to_string() {
-                        quitnow = 1;
-                    } else {
-                        command.clear();
-                        command.push_str("Bad_command!");
-                        mode = Mode::Command;
-                    }
-                }
-                _ => (),
-            }
-        } else if mode == Mode::Insert {
-            if cstate == Cursorstate::Leftnibble {
-                // Left nibble
-                if let Some(c) = (key as char).to_digit(16) {
-                    buf.insert(cursorpos, (c as u8) << 4); cstate = Cursorstate::Rightnibble;
-                }
-                if key == 27 {mode = Mode::Command;};
-            } else if cstate == Cursorstate::Rightnibble {
-                // Right nibble
-                if cursorpos == buf.len() {
-                    buf.insert(cursorpos, 0 );
-                }
-                if let Some(c) = (key as char).to_digit(16) {
-                    buf[cursorpos] = buf[cursorpos]&0xF0 | c as u8; cstate = Cursorstate::Leftnibble; cursorpos+=1;
-                }
-                if key == 27 {mode = Mode::Command;};
-            } else if cstate == Cursorstate::Asciichar {
-                // Ascii
-                match key {
-                    c @ 32...126 => {
-                        buf.insert(cursorpos, c);
-                        cursorpos += 1;
-                    }
-                    27 => {
-                        mode = Mode::Command;
-                    }
-                    _ => (),
-                }
-            }
-        } else if mode == Mode::TypeSearch {
-            //            if cstate == Cursorstate::Asciichar { // Ascii search
-            match key {
-                c @ 32...126 => {
-                    command.push(c as char);
-                }
-                27 => {
-                    command.clear();
-                    mode = Mode::Command;
-                }
-                10 => {
-                    // Enter pressed, compute command!
-                    if cstate == Cursorstate::Asciichar {
-                        mode = Mode::SearchIt;
-                    } else {
-                        mode = Mode::SearchItHex;
-                    }
-                }
-                _ => (),
-            }
-            //            }
 
-            if mode == Mode::SearchIt {
-                let search = command.as_bytes();
-                cursorpos = buf.find_subset(&search).unwrap_or(cursorpos);
-                mode = Mode::Command;
-                // command.push_str("Bad_command!");
-            }
-            if mode == Mode::SearchItHex {
-                // TODO
-                mode = Mode::Command;
-                command.push_str("Hex search not yet implemented!");
-            }
         }
-        draw(&buf,
-             cursorpos,
-             SPALTEN,
-             mode,
-             &command,
-             cstate,
-             screenoffset);
+
+        draw(&buf, cursorpos, SPALTEN, &command, cstate, screenoffset);
     }
 
     refresh();

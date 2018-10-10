@@ -6,5 +6,7 @@ logo2.png: logo2.svg
 	convert logo2.svg -resize 512x512 logo2.png
 test:
 	cargo test
+clean:
+	cargo clean
 all:
 	cargo build

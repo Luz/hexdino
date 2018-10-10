@@ -1,0 +1,36 @@
+movement		= _{ down | up | left | right | start | end }
+down				= { "j" | "[B" }
+up					= { "k" | "[A" }
+left				= { "h" | "[D" }
+right				= { "l" | "[C" }
+start				= { "0" }
+end					= { "$" }
+
+// Do not allow escape as replacement char
+replacement	= { !"\u{1b}" ~ any }
+replaceby		= { &replace ~ any ~ replacement }
+replace			= { "r" }
+remove			= { "x" }
+insertment	= { !"\u{1b}" ~ any }
+insertby		= { &insert ~ any ~ insertment }
+insert			= { "i" }
+jumpascii		= { "J" }
+helpfile		= { "?" }
+searchstr		= { (!("\u{1b}" | "\n") ~ any)* }
+search			= { "/" ~ searchstr ~ "\n" }
+quickstuff	= _{ replaceby | replace | remove | insertby | insert | jumpascii | helpfile | search }
+
+saveandexit	= { "wq!" | "wq" } // careful, notice priority
+exit				= { "q!" | "q" } // careful, notice priority
+save				= { "w!" | "w" } // careful, notice priority
+cmd					= { ":" ~ ( saveandexit | exit | save ) ~ "\n" }
+
+// consume any "not escapes" until first escape
+escape = { (!("\u{1b}") ~ any)* ~ "\u{1b}" }
+
+// Not escape and not Enter
+gatherone		= @{ !("\u{1b}" | "\n") ~ any }
+gatherall		= { gatherone* }
+
+cmd_list		= _{ ( movement | escape | quickstuff | cmd | gatherall ) }
+
