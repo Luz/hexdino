@@ -27,10 +27,12 @@ cmd					= { ":" ~ ( saveandexit | exit | save ) ~ "\n" }
 
 // consume any "not escapes" until first escape
 escape = { (!("\u{1b}") ~ any)* ~ "\u{1b}" }
+// consume any "not backspaces" until first backspace
+backspace = { (!("\u{7f}") ~ any)* ~ "\u{7f}" }
 
 // Not escape and not Enter
 gatherone		= @{ !("\u{1b}" | "\n") ~ any }
 gatherall		= { gatherone* }
 
-cmd_list		= _{ ( movement | escape | quickstuff | cmd | gatherall ) }
+cmd_list		= _{ ( movement | escape | backspace | quickstuff | cmd | gatherall ) }
 

@@ -219,6 +219,11 @@ fn main() {
                     command.push_str("No helpfile yet");
                 }
                 Rule::search => (),
+                Rule::backspace => {
+                    command.pop();
+                    command.pop();
+                    clear = false;
+                },
                 _ => (),
             }
 
