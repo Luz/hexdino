@@ -12,9 +12,7 @@ use std::error::Error;
 use std::env;
 
 mod draw;
-mod find;
 use draw::draw;
-use find::FindSubset;
 
 extern crate ncurses;
 use ncurses::*;
@@ -31,6 +29,9 @@ use pest::Parser;
 #[derive(Parser)]
 #[grammar = "cmd.pest"]
 struct IdentParser;
+
+extern crate memmem;
+use memmem::{Searcher, TwoWaySearcher};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum Cursorstate {
@@ -289,7 +290,8 @@ fn main() {
                     Rule::searchstr => {
                         // printw(&format!("Searching for: {:?}", inner_cmd.as_str() ))
                         let search = inner_cmd.as_str().as_bytes();
-                        cursorpos = buf.find_subset(&search).unwrap_or(cursorpos);
+                        let foundpos= TwoWaySearcher::new(&search);
+                        cursorpos = foundpos.search_in(&buf).unwrap_or(cursorpos);
                     }
                     Rule::saveandexit => {
                         save = true;
