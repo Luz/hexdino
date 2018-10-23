@@ -41,6 +41,7 @@ pub enum Cursorstate {
 }
 
 fn main() {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
     let mut buf = vec![];
     let mut cursorpos: usize = 0;
     let mut cstate: Cursorstate = Cursorstate::Leftnibble;
@@ -62,6 +63,7 @@ fn main() {
     let program = args[0].clone();
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help menu");
+    opts.optflag("v", "version", "print the version");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
@@ -71,6 +73,11 @@ fn main() {
             return;
         }
     };
+    if matches.opt_present("v") {
+        println!("Version: {}", VERSION);
+        endwin();
+        return;
+    }
     if matches.opt_present("h") {
         println!("Usage: {} FILE [options]", program);
         endwin();
