@@ -84,35 +84,36 @@ fn main() {
         return;
     }
 
-    let patharg = if !matches.free.is_empty() {
-        command.push_str(&format!("File {} was just opened", matches.free[0].clone()));
-        matches.free[0].clone()
-    } else {
-        printw(&format!("Usage: {} FILE [options]", program));
-        String::new()
-    };
-
-    let path = Path::new(&patharg);
-    let display = path.display();
-
     if !has_colors() {
         endwin();
         println!("Your terminal does not support color!\n");
         return;
     }
 
-    if patharg != "" {
+    let patharg = match matches.free.is_empty() {
+        true => String::new(),
+        false => matches.free[0].clone(),
+    };
+    let path = Path::new(&patharg);
+
+    if !patharg.is_empty() {
         let mut file = match OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .open(&path) {
-            Err(why) => panic!("couldn't open {}: {}", display, Error::description(&why)),
+            Err(why) => {
+                println!("Could not open {}: {}", path.display(), why.to_string());
+                endwin();
+                return;
+            }
             Ok(file) => file,
         };
         file.read_to_end(&mut buf).ok().expect(
             "File could not be read.",
         );
+    } else {
+        command.push_str("File create failed, no file name given.");
     }
 
     draw(&buf, cursorpos, SPALTEN, &command, cstate, screenoffset);
@@ -322,7 +323,11 @@ fn main() {
                         .create(true)
                         .open(&path) {
                         Err(why) => {
-                            panic!("couldn't open {}: {}", display, Error::description(&why))
+                            panic!(
+                                "Could not open {}: {}",
+                                path.display(),
+                                Error::description(&why)
+                            )
                         }
                         Ok(file) => file,
                     };
@@ -337,7 +342,7 @@ fn main() {
                     );
                     command.push_str("File saved!");
                 } else {
-                    command.push_str("path.exists() failed");
+                    command.push_str("Careful, file could not be saved!");
                 }
                 // TODO: define filename during runtime
                 save = false;
