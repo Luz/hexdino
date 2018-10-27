@@ -234,6 +234,13 @@ fn main() {
                     command.pop();
                     clear = false;
                 }
+                Rule::saveandexit => {
+                    save = true;
+                    quitnow = true;
+                }
+                Rule::exit => quitnow = true,
+                Rule::save => save = true,
+
                 _ => (),
             }
 
@@ -318,12 +325,6 @@ fn main() {
                         cursorpos = buf.find_subset(&needle).unwrap_or(cursorpos);
                         // endwin(); println!("Searching for: {:?}", needle ); return;
                     }
-                    Rule::saveandexit => {
-                        save = true;
-                        quitnow = true;
-                    }
-                    Rule::exit => quitnow = true,
-                    Rule::save => save = true,
                     Rule::escape => (),
                     Rule::gatherone => clear = false,
                     _ => {

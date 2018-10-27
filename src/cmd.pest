@@ -23,10 +23,10 @@ searchbytes	= { ( hex_digit{2} )* }
 hexsearch   = { "/" ~ searchbytes ~ "\n" }
 quickstuff  = _{ replaceby | replace | remove | insertby | insert | jumpascii | helpfile | hexsearch | search }
 
-saveandexit	= { "wq!" | "wq" } // careful, notice priority
-exit				= { "q!" | "q" } // careful, notice priority
-save				= { "w!" | "w" } // careful, notice priority
-cmd					= { ":" ~ ( saveandexit | exit | save ) ~ "\n" }
+saveandexit	= { ":wq!" | ":wq" } // careful, notice priority
+exit				= { ":q!" | ":q" } // careful, notice priority
+save				= { ":w!" | ":w" } // careful, notice priority
+cmd					= _{ ( saveandexit | exit | save ) ~ "\n" }
 
 // consume any "not escapes" until first escape
 escape = { (!("\u{1b}") ~ any)* ~ "\u{1b}" }
