@@ -13,6 +13,8 @@ use std::env;
 
 mod draw;
 use draw::draw;
+mod find;
+use find::FindOptSubset;
 
 extern crate ncurses;
 use ncurses::*;
@@ -227,12 +229,11 @@ fn main() {
                 Rule::helpfile => {
                     command.push_str("No helpfile yet");
                 }
-                Rule::search => (),
                 Rule::backspace => {
                     command.pop();
                     command.pop();
                     clear = false;
-                },
+                }
                 _ => (),
             }
 
@@ -296,10 +297,26 @@ fn main() {
                         }
                     }
                     Rule::searchstr => {
-                        // printw(&format!("Searching for: {:?}", inner_cmd.as_str() ))
                         let search = inner_cmd.as_str().as_bytes();
-                        let foundpos= TwoWaySearcher::new(&search);
+                        let foundpos = TwoWaySearcher::new(&search);
                         cursorpos = foundpos.search_in(&buf).unwrap_or(cursorpos);
+                    }
+                    Rule::searchbytes => {
+                        let search = inner_cmd.as_str().as_bytes();
+                        let mut needle = vec![];
+                        for i in 0..search.len() {
+                            let nibble = match search[i] as u8 {
+                                c @ 48...57 => c - 48, // Numbers from 0 to 9
+                                b'x' => 0x10, // x is the wildcard
+                                b'X' => 0x10, // X is the wildcard
+                                c @ b'a'...b'f' => c - 87,
+                                c @ b'A'...b'F' => c - 55,
+                                _ => panic!("Should not get to this position!"),
+                            };
+                            needle.push(nibble);
+                        }
+                        cursorpos = buf.find_subset(&needle).unwrap_or(cursorpos);
+                        // endwin(); println!("Searching for: {:?}", needle ); return;
                     }
                     Rule::saveandexit => {
                         save = true;

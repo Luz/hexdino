@@ -18,7 +18,10 @@ jumpascii		= { "J" }
 helpfile		= { "?" }
 searchstr		= { (!("\u{1b}" | "\n") ~ any)* }
 search			= { "/" ~ searchstr ~ "\n" }
-quickstuff	= _{ replaceby | replace | remove | insertby | insert | jumpascii | helpfile | search }
+hex_digit   = @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
+searchbytes	= { ( hex_digit{2} )* }
+hexsearch   = { "/" ~ searchbytes ~ "\n" }
+quickstuff  = _{ replaceby | replace | remove | insertby | insert | jumpascii | helpfile | hexsearch | search }
 
 saveandexit	= { "wq!" | "wq" } // careful, notice priority
 exit				= { "q!" | "q" } // careful, notice priority
