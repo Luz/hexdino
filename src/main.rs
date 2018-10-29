@@ -202,6 +202,13 @@ fn main() {
                         cstate = Cursorstate::Rightnibble;
                     }
                 }
+                Rule::top => {
+                    cursorpos = 0;
+                }
+                Rule::bottom => {
+                    cursorpos = buf.len() - 1;
+                    cursorpos -= cursorpos % SPALTEN; // jump to start of line
+                }
                 Rule::replace => {
                     // printw("next char will be the replacement!");
                     clear = false;

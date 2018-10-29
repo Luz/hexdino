@@ -1,10 +1,12 @@
-movement		= _{ down | up | left | right | start | end }
+movement		= _{ down | up | left | right | start | end | top | bottom }
 down				= { "j" | "[B" }
 up					= { "k" | "[A" }
 left				= { "h" | "[D" }
 right				= { "l" | "[C" }
 start				= { "0" }
 end					= { "$" }
+top					= { "gg" }
+bottom			= { "G" }
 
 // Do not allow escape as replacement char
 replacement	= { !"\u{1b}" ~ any }
