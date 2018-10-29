@@ -378,10 +378,10 @@ fn main() {
 
             // Always move screen when cursor leaves screen
             if cursorpos > (screenheight + screenoffset - 1) * SPALTEN - 1 {
-                screenoffset += 1; // move screen
+                screenoffset = 2 + cursorpos / SPALTEN - screenheight;
             }
             if cursorpos < screenoffset * SPALTEN {
-                screenoffset -= 1; // move screen
+                screenoffset = cursorpos / SPALTEN;
             }
 
 
