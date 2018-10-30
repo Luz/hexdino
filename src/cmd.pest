@@ -27,7 +27,7 @@ quickstuff  = _{ replaceby | replace | remove | insertby | insert | jumpascii | 
 
 saveandexit	= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
 exit				= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority
-save				= { (":" ~ ("w!" | "w") ~ "\n") } // careful, notice priority
+save				= { (":" ~ ("write!" | "write" | "w!" | "w") ~ "\n") } // careful, notice priority
 cmd					= _{ ( saveandexit | exit | save ) }
 
 // consume any "not escapes" until first escape
