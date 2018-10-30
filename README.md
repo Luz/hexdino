@@ -10,7 +10,7 @@ A hex editor with vim like keybindings written in Rust.
 ### Ubuntu
 
 ```Shell
-sudo apt-get install libncursesw5-dev
+sudo apt install libncursesw5-dev cargo
 cargo build
 ```
 
