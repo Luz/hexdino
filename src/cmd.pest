@@ -23,7 +23,9 @@ search			= { "/" ~ searchstr ~ "\n" }
 hex_digit   = @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
 searchbytes	= { ( hex_digit{2} )* }
 hexsearch   = { "/" ~ searchbytes ~ "\n" }
-quickstuff  = _{ replaceby | replace | remove | insertby | insert | jumpascii | helpfile | hexsearch | search }
+linenumber	= { ('0'..'9')+ }
+line				= { linenumber ~ "gg" }
+quickstuff  = _{ replaceby | replace | remove | insertby | insert | jumpascii | helpfile | hexsearch | search | line }
 
 saveandexit	= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
 exit				= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority

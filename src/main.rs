@@ -332,6 +332,14 @@ fn main() {
                         cursorpos = buf.find_subset(&needle).unwrap_or(cursorpos);
                         // endwin(); println!("Searching for: {:?}", needle ); return;
                     }
+                    Rule::linenumber => {
+                        let linenr: usize = inner_cmd.as_str().parse().unwrap();
+                        cursorpos = linenr * SPALTEN; // jump to the line
+                        if cursorpos > buf.len() { // detect file end
+                            cursorpos = buf.len();
+                        }
+                        cursorpos -= cursorpos % SPALTEN; // jump to start of line
+                    }
                     Rule::escape => (),
                     Rule::gatherone => clear = false,
                     _ => {
