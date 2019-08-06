@@ -1,16 +1,27 @@
 extern crate ncurses;
 use ncurses::*;
 use Cursorstate;
+use std::cmp;
 
 pub fn draw(
     buf: &Vec<u8>,
     cursorpos: usize,
     cols: usize,
     command: &String,
+    debug: &mut String,
     cstate: Cursorstate,
     screenoffset: usize,
 ) {
     erase();
+
+
+    // TODO: just temporary, use this later to pick out "&Vec<u8>" from draw(..)-function:
+    debug.clear();
+    let draw_range = get_draw_indices(buf.len(), cols, screenoffset);
+    debug.push_str(&format!("          draw_range:{:?}", draw_range));
+    let screensize = get_screen_size(cols);
+    debug.push_str(&format!("   screensize:{:?}", screensize));
+
 
     let screenheight: usize;
     screenheight = getmaxy(stdscr()) as usize;
@@ -18,7 +29,7 @@ pub fn draw(
     let mut rows = buf.len() / cols;
     // Last line reserved for Status/Commands/etc (Like in vim)
     if rows >= screenheight - 1 {
-        rows = screenheight - 2;
+        rows = screenheight - 2; //TODO: this shall not be less than 0 or it panicks?
     }
 
     for z in 0..rows + 1 {
@@ -86,6 +97,7 @@ pub fn draw(
         printw("\n");
     }
     printw(&format!("{}", command));
+    printw(&format!("{}", debug));
 }
 
 fn get_line(cols: usize, screenoffset: usize, z: usize) -> usize {
@@ -93,6 +105,33 @@ fn get_line(cols: usize, screenoffset: usize, z: usize) -> usize {
 }
 fn get_pos(cols: usize, screenoffset: usize, z: usize, s: usize) -> usize {
     return z * cols + screenoffset * cols + s;
+}
+pub fn get_screen_size(
+    cols: usize,
+    ) -> usize {
+    let screenheight: usize;
+    screenheight = getmaxy(stdscr()) as usize;
+
+    let mut ret: usize = 0;
+
+    // Last line reserved for Status/Commands/etc (Like in vim)
+    if screenheight >= 1 {
+        ret = (screenheight-1) * cols;
+    }
+    return ret;
+}
+pub fn get_draw_indices(
+    buflen: usize,
+    cols: usize,
+    screenoffset: usize,
+    ) -> (usize, usize) {
+
+    let max_draw_len:usize = cmp::min(buflen, get_screen_size(cols));
+
+    let starting_pos: usize = screenoffset * cols;
+    let ending_pos: usize = starting_pos + max_draw_len;
+
+    return (starting_pos, ending_pos);
 }
 
 fn color_left_nibble(color: bool, cstate: Cursorstate) {

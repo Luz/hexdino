@@ -51,6 +51,7 @@ fn main() {
     let mut screenoffset: usize = 0;
     const SPALTEN: usize = 16;
     let mut command = String::new();
+    let mut debug = String::new();
 
     // start ncursesw
     initscr();
@@ -118,7 +119,7 @@ fn main() {
         command.push_str("File create failed, no file name given.");
     }
 
-    draw(&buf, cursorpos, SPALTEN, &command, cstate, screenoffset);
+    draw(&buf, cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
 
     let mut quitnow = false;
     while quitnow == false {
@@ -395,7 +396,7 @@ fn main() {
 
         }
 
-        draw(&buf, cursorpos, SPALTEN, &command, cstate, screenoffset);
+        draw(&buf, cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
     }
 
     refresh();
