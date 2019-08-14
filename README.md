@@ -29,6 +29,9 @@ Then build with cargo
 nix-shell . --command "cargo build"
 ```
 
+## Logo
+![logo](https://raw.githubusercontent.com/Luz/hexdino/master/logo.png)
+
 ## Related projects
 - [command_parser](https://github.com/Luz/command_parser)
 - [pest-parser](https://github.com/pest-parser/pest)
