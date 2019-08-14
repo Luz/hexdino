@@ -4,7 +4,7 @@ use Cursorstate;
 use std::cmp;
 
 pub fn draw(
-    buf: &Vec<u8>,
+    buf: &[u8],
     cursorpos: usize,
     cols: usize,
     command: &String,
@@ -14,51 +14,49 @@ pub fn draw(
 ) {
     erase();
 
-
-    // TODO: just temporary, use this later to pick out "&Vec<u8>" from draw(..)-function:
     debug.clear();
-    let draw_range = get_draw_indices(buf.len(), cols, screenoffset);
-    debug.push_str(&format!("          draw_range:{:?}", draw_range));
-    let screensize = get_screen_size(cols);
-    debug.push_str(&format!("   screensize:{:?}", screensize));
-
+//    let screensize = get_screen_size(cols);
+//    debug.push_str(&format!("   screensize:{:?}", screensize));
+//    debug.push_str(&format!("   screenoffset:{:?}", screenoffset));
+//    debug.push_str(&format!("   buf.len():{:?}", buf.len()));
 
     let screenheight: usize;
     screenheight = getmaxy(stdscr()) as usize;
+//    debug.push_str(&format!("   screenheight:{:?}", screenheight));
 
-    let mut rows = buf.len() / cols;
-    // Last line reserved for Status/Commands/etc (Like in vim)
-    if rows >= screenheight - 1 {
-        rows = screenheight - 2; //TODO: this shall not be less than 0 or it panicks?
-    }
+    let mut tmpbuflen = buf.len();
+    if tmpbuflen >= 1 { tmpbuflen -= 1; }
+    let rows = tmpbuflen / cols + 1;
 
-    for z in 0..rows + 1 {
+//    debug.push_str(&format!("   rows:{:?}", rows));
+
+    for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=SPALTEN)
-        printw(&format!("{:08X}: ", get_line(cols, screenoffset, z)));
+        printw(&format!("{:08X}: ", get_absolute_line(cols, screenoffset, z)));
         // Additional space between line number and hex
         printw(" ");
         for s in 0..cols {
-            let pos: usize = get_pos(cols, screenoffset, z, s);
+            let pos: usize = z*cols + s;
             if pos < buf.len() {
 
-                color_left_nibble_cond(true, pos == cursorpos, cstate);
+                color_left_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
                 printw(&format!("{:01X}", buf[pos] >> 4));
-                color_left_nibble_cond(false, pos == cursorpos, cstate);
+                color_left_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
-                color_right_nibble_cond(true, pos == cursorpos, cstate);
+                color_right_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
                 printw(&format!("{:01X}", buf[pos] & 0x0F));
-                color_right_nibble_cond(false, pos == cursorpos, cstate);
+                color_right_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
                 printw(" ");
             } else if pos == buf.len() {
 
-                color_left_nibble_cond(true, pos == cursorpos, cstate);
+                color_left_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
                 printw("-");
-                color_left_nibble_cond(false, pos == cursorpos, cstate);
+                color_left_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
-                color_right_nibble_cond(true, pos == cursorpos, cstate);
+                color_right_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
                 printw("-");
-                color_right_nibble_cond(false, pos == cursorpos, cstate);
+                color_right_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
                 printw(" ");
             } else {
@@ -68,8 +66,8 @@ pub fn draw(
         // Additional space between hex and ascii
         printw(" ");
         for s in 0..cols {
-            let pos: usize = get_pos(cols, screenoffset, z, s);
-            color_ascii_cond(true, pos == cursorpos, cstate);
+            let pos: usize = z*cols + s;
+            color_ascii_cond(true, pos+cols*screenoffset == cursorpos, cstate);
             if pos < buf.len() {
                 if let c @ 32...126 = buf[pos] {
                     if c as char == '%' {
@@ -87,12 +85,11 @@ pub fn draw(
                 printw(" ");
             }
 
-            color_ascii_cond(false, pos == cursorpos, cstate);
+            color_ascii_cond(false, pos+cols*screenoffset == cursorpos, cstate);
         }
         printw("\n");
     }
-    // TODO: check if "rows" is better
-    for _ in 0..screenheight - rows - 2 {
+    for _ in 1 .. screenheight - rows {
         // Put the cursor on last line of terminal
         printw("\n");
     }
@@ -100,11 +97,8 @@ pub fn draw(
     printw(&format!("{}", debug));
 }
 
-fn get_line(cols: usize, screenoffset: usize, z: usize) -> usize {
+fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
     return z * cols + screenoffset * cols;
-}
-fn get_pos(cols: usize, screenoffset: usize, z: usize, s: usize) -> usize {
-    return z * cols + screenoffset * cols + s;
 }
 pub fn get_screen_size(
     cols: usize,
@@ -120,16 +114,19 @@ pub fn get_screen_size(
     }
     return ret;
 }
-pub fn get_draw_indices(
+pub fn get_absolute_draw_indices(
     buflen: usize,
     cols: usize,
     screenoffset: usize,
     ) -> (usize, usize) {
 
-    let max_draw_len:usize = cmp::min(buflen, get_screen_size(cols));
+    let max_draw_len:usize = cmp::min(buflen, get_screen_size(cols)); //hier muss bei get_screen_size noch auf 16er abgerundet werden?
 
     let starting_pos: usize = screenoffset * cols;
-    let ending_pos: usize = starting_pos + max_draw_len;
+    let mut ending_pos: usize = starting_pos + max_draw_len;
+    if ending_pos > buflen {
+        ending_pos = buflen;
+    }
 
     return (starting_pos, ending_pos);
 }

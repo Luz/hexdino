@@ -13,6 +13,7 @@ use std::env;
 
 mod draw;
 use draw::draw;
+use draw::get_absolute_draw_indices;
 mod find;
 use find::FindOptSubset;
 
@@ -119,7 +120,8 @@ fn main() {
         command.push_str("File create failed, no file name given.");
     }
 
-    draw(&buf, cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
+    let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
+    draw(&buf[draw_range.0 .. draw_range.1], cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
 
     let mut quitnow = false;
     while quitnow == false {
@@ -396,7 +398,8 @@ fn main() {
 
         }
 
-        draw(&buf, cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
+    let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
+        draw(&buf[draw_range.0 .. draw_range.1], cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
     }
 
     refresh();
