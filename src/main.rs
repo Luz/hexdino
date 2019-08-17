@@ -217,12 +217,14 @@ fn main() {
                     clear = false;
                 }
                 Rule::remove => {
-                    if buf.len() > 0 {
+                    // check if in valid range
+                    if buf.len() > 0 && cursorpos < buf.len() {
                         // remove the current char
                         buf.remove(cursorpos);
-                        if cursorpos >= buf.len() && cursorpos > 0 {
-                            cursorpos -= 1;
-                        }
+                    }
+                    // always perform the movement if possible
+                    if cursorpos > 0 && cursorpos >= buf.len() {
+                        cursorpos -= 1;
                     }
                 }
                 Rule::insert => {
