@@ -100,25 +100,27 @@ fn main() {
     };
     let path = Path::new(&patharg);
 
-    if !patharg.is_empty() {
-        let mut file = match OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .open(&path) {
-            Err(why) => {
-                println!("Could not open {}: {}", path.display(), why.to_string());
-                endwin();
-                return;
-            }
-            Ok(file) => file,
-        };
-        file.read_to_end(&mut buf).ok().expect(
-            "File could not be read.",
-        );
-    } else {
-        command.push_str("File create failed, no file name given.");
+    if patharg.is_empty() {
+        endwin();
+        println!("Patharg is empty!\n");
+        return;
     }
+
+    let mut file = match OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(&path) {
+        Err(why) => {
+            println!("Could not open {}: {}", path.display(), why.to_string());
+            endwin();
+            return;
+        }
+        Ok(file) => file,
+    };
+    file.read_to_end(&mut buf).ok().expect(
+        "File could not be read.",
+    );
 
     let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
     draw(&buf[draw_range.0 .. draw_range.1], cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
