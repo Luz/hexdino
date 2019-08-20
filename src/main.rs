@@ -244,7 +244,7 @@ fn main() {
                     }
                     // move only in case last line just got deleted
                     if cursorpos >= buf.len() {
-                        if ( cursorpos >= SPALTEN ) {
+                        if cursorpos >= SPALTEN {
                             cursorpos -= SPALTEN;
                         }
                     }
