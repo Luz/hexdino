@@ -14,7 +14,7 @@ pub fn draw(
 ) {
     erase();
 
-    debug.clear();
+//    debug.clear();
 //    let screensize = get_screen_size(cols);
 //    debug.push_str(&format!("   screensize:{:?}", screensize));
 //    debug.push_str(&format!("   screenoffset:{:?}", screenoffset));
