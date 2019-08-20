@@ -233,23 +233,23 @@ fn main() {
                 Rule::deleteline => {
                     // check if in valid range
                     if buf.len() > 0 && cursorpos < buf.len() {
-                        // calculate start of line
                         let startofline = cursorpos - cursorpos % SPALTEN;
-                        // calculate end of line
                         let mut endofline = cursorpos - (cursorpos % SPALTEN) + SPALTEN ;
                         endofline = cmp::min( endofline, buf.len() );
 //                        debug.clear();
 //                        debug.push_str(&format!("   cursorpos:{:?}", cursorpos));
 //                        debug.push_str(&format!("   startofline:{:?}", startofline));
 //                        debug.push_str(&format!("   endofline:{:?}", endofline));
-                        // remove the current line
                         buf.drain(startofline..endofline);
-
                     }
-                    // always perform the movement if possible
-                    if cursorpos > SPALTEN {
-                        cursorpos -= SPALTEN;
+                    // move only in case last line just got deleted
+                    if cursorpos >= buf.len() {
+                        if ( cursorpos >= SPALTEN ) {
+                            cursorpos -= SPALTEN;
+                        }
                     }
+                    // move to first char of line
+                    cursorpos -= cursorpos % SPALTEN; // jump to start of line
                 }
                 Rule::insert => {
                     printw("next chars will be inserted!");
