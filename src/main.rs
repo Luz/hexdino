@@ -129,7 +129,7 @@ fn main() {
     let mut quitnow = false;
     while quitnow == false {
         let key = std::char::from_u32(getch() as u32).unwrap();
-        printw(&format!("   {:?}   ", key));
+        addstr(&format!("   {:?}   ", key));
         command.push_str(&key.clone().to_string());
 
         let parsethisstring = command.clone();
@@ -141,7 +141,7 @@ fn main() {
         for cmd in commands {
             match cmd.as_rule() {
                 Rule::down => {
-                    printw(&format!("{:?}", cmd.as_rule()));
+                    addstr(&format!("{:?}", cmd.as_rule()));
                     if cursorpos + SPALTEN < buf.len() {
                         // not at end
                         cursorpos += SPALTEN;
@@ -216,7 +216,7 @@ fn main() {
                     cursorpos -= cursorpos % SPALTEN; // jump to start of line
                 }
                 Rule::replace => {
-                    // printw("next char will be the replacement!");
+                    // addstr("next char will be the replacement!");
                     clear = false;
                 }
                 Rule::remove => {
@@ -252,7 +252,7 @@ fn main() {
                     cursorpos -= cursorpos % SPALTEN; // jump to start of line
                 }
                 Rule::insert => {
-                    printw("next chars will be inserted!");
+                    addstr("next chars will be inserted!");
                     clear = false;
                 }
                 Rule::jumpascii => {
@@ -284,7 +284,7 @@ fn main() {
                 match inner_cmd.as_rule() {
                     Rule::replacement => {
                         // TODO: use inner_cmd and not just "key"
-                        // printw(&format!("Replacement: {:?}", inner_cmd.as_str()));
+                        // addstr(&format!("Replacement: {:?}", inner_cmd.as_str()));
                         if cstate == Cursorstate::Asciichar {
                             if cursorpos >= buf.len() {
                                 buf.insert(cursorpos, 0);
@@ -314,7 +314,7 @@ fn main() {
                     }
                     // TODO: use inner_cmd and not just "key"
                     Rule::insertment => {
-                        // printw(&format!("Inserted: {:?}", inner_cmd.as_str()));
+                        // addstr(&format!("Inserted: {:?}", inner_cmd.as_str()));
                         command.pop(); // remove the just inserted thing
                         clear = false;
 

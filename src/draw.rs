@@ -32,39 +32,39 @@ pub fn draw(
 
     for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=SPALTEN)
-        printw(&format!("{:08X}: ", get_absolute_line(cols, screenoffset, z)));
+        addstr(&format!("{:08X}: ", get_absolute_line(cols, screenoffset, z)));
         // Additional space between line number and hex
-        printw(" ");
+        addstr(" ");
         for s in 0..cols {
             let pos: usize = z*cols + s;
             if pos < buf.len() {
 
                 color_left_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
-                printw(&format!("{:01X}", buf[pos] >> 4));
+                addstr(&format!("{:01X}", buf[pos] >> 4));
                 color_left_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
                 color_right_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
-                printw(&format!("{:01X}", buf[pos] & 0x0F));
+                addstr(&format!("{:01X}", buf[pos] & 0x0F));
                 color_right_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
-                printw(" ");
+                addstr(" ");
             } else if pos == buf.len() {
 
                 color_left_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
-                printw("-");
+                addstr("-");
                 color_left_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
                 color_right_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
-                printw("-");
+                addstr("-");
                 color_right_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
 
-                printw(" ");
+                addstr(" ");
             } else {
-                printw("-- ");
+                addstr("-- ");
             }
         }
         // Additional space between hex and ascii
-        printw(" ");
+        addstr(" ");
         for s in 0..cols {
             let pos: usize = z*cols + s;
             color_ascii_cond(true, pos+cols*screenoffset == cursorpos, cstate);
@@ -72,29 +72,29 @@ pub fn draw(
                 if let c @ 32...126 = buf[pos] {
                     if c as char == '%' {
                         // '%' needs to be escaped by a '%' in ncurses
-                        printw("%%");
+                        addstr("%%");
                     } else {
-                        printw(&format!("{}", c as char));
+                        addstr(&format!("{}", c as char));
                     }
                 } else {
                     // Mark non-ascii symbols
-                    printw(&format!("."));
+                    addstr(&format!("."));
                 }
             } else if pos == buf.len() {
                 // Pad ascii with spaces
-                printw(" ");
+                addstr(" ");
             }
 
             color_ascii_cond(false, pos+cols*screenoffset == cursorpos, cstate);
         }
-        printw("\n");
+        addstr("\n");
     }
     for _ in 1 .. screenheight - rows {
         // Put the cursor on last line of terminal
-        printw("\n");
+        addstr("\n");
     }
-    printw(&format!("{}", command));
-    printw(&format!("{}", debug));
+    addstr(&format!("{}", command));
+    addstr(&format!("{}", debug));
 }
 
 fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
