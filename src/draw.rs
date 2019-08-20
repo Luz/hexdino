@@ -70,12 +70,7 @@ pub fn draw(
             color_ascii_cond(true, pos+cols*screenoffset == cursorpos, cstate);
             if pos < buf.len() {
                 if let c @ 32...126 = buf[pos] {
-                    if c as char == '%' {
-                        // '%' needs to be escaped by a '%' in ncurses
-                        addstr("%%");
-                    } else {
-                        addstr(&format!("{}", c as char));
-                    }
+                    addstr(&format!("{}", c as char));
                 } else {
                     // Mark non-ascii symbols
                     addstr(&format!("."));
