@@ -10,6 +10,7 @@ use std::io::SeekFrom;
 use std::path::Path;
 use std::error::Error;
 use std::env;
+use std::cmp;
 
 mod draw;
 use draw::draw;
@@ -227,6 +228,27 @@ fn main() {
                     // always perform the movement if possible
                     if cursorpos > 0 && cursorpos >= buf.len() {
                         cursorpos -= 1;
+                    }
+                }
+                Rule::deleteline => {
+                    // check if in valid range
+                    if buf.len() > 0 && cursorpos < buf.len() {
+                        // calculate start of line
+                        let startofline = cursorpos - cursorpos % SPALTEN;
+                        // calculate end of line
+                        let mut endofline = cursorpos - (cursorpos % SPALTEN) + SPALTEN ;
+                        endofline = cmp::min( endofline, buf.len() );
+//                        debug.clear();
+//                        debug.push_str(&format!("   cursorpos:{:?}", cursorpos));
+//                        debug.push_str(&format!("   startofline:{:?}", startofline));
+//                        debug.push_str(&format!("   endofline:{:?}", endofline));
+                        // remove the current line
+                        buf.drain(startofline..endofline);
+
+                    }
+                    // always perform the movement if possible
+                    if cursorpos > SPALTEN {
+                        cursorpos -= SPALTEN;
                     }
                 }
                 Rule::insert => {
