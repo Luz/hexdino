@@ -312,6 +312,16 @@ fn main() {
                         }
 
                     }
+                    Rule::dlines => {
+                        let amount: usize = inner_cmd.as_str().parse().unwrap();
+                        // check if in valid range
+                        if buf.len() > 0 && cursorpos < buf.len() {
+                            let startofline = cursorpos - cursorpos % SPALTEN;
+                            let mut endofline = cursorpos - (cursorpos % SPALTEN) + (SPALTEN * amount ) ;
+                            endofline = cmp::min( endofline, buf.len() );
+                            buf.drain(startofline..endofline);
+                        }
+                    }
                     // TODO: use inner_cmd and not just "key"
                     Rule::insertment => {
                         // addstr(&format!("Inserted: {:?}", inner_cmd.as_str()));
