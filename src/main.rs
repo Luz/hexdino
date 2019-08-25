@@ -230,27 +230,6 @@ fn main() {
                         cursorpos -= 1;
                     }
                 }
-                Rule::deleteline => {
-                    // check if in valid range
-                    if buf.len() > 0 && cursorpos < buf.len() {
-                        let startofline = cursorpos - cursorpos % SPALTEN;
-                        let mut endofline = cursorpos - (cursorpos % SPALTEN) + SPALTEN ;
-                        endofline = cmp::min( endofline, buf.len() );
-//                        debug.clear();
-//                        debug.push_str(&format!("   cursorpos:{:?}", cursorpos));
-//                        debug.push_str(&format!("   startofline:{:?}", startofline));
-//                        debug.push_str(&format!("   endofline:{:?}", endofline));
-                        buf.drain(startofline..endofline);
-                    }
-                    // move only in case last line just got deleted
-                    if cursorpos >= buf.len() {
-                        if cursorpos >= SPALTEN {
-                            cursorpos -= SPALTEN;
-                        }
-                    }
-                    // move to first char of line
-                    cursorpos -= cursorpos % SPALTEN; // jump to start of line
-                }
                 Rule::insert => {
                     addstr("next chars will be inserted!");
                     clear = false;
@@ -312,8 +291,8 @@ fn main() {
                         }
 
                     }
-                    Rule::dlines => {
-                        let amount: usize = inner_cmd.as_str().parse().unwrap();
+                    Rule::dd_lines => {
+                        let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
                         // check if in valid range
                         if buf.len() > 0 && cursorpos < buf.len() {
                             let startofline = cursorpos - cursorpos % SPALTEN;
