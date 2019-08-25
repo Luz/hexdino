@@ -208,9 +208,6 @@ fn main() {
                         cstate = Cursorstate::Rightnibble;
                     }
                 }
-                Rule::top => {
-                    cursorpos = 0;
-                }
                 Rule::bottom => {
                     cursorpos = buf.len() - 1;
                     cursorpos -= cursorpos % SPALTEN; // jump to start of line
@@ -350,8 +347,8 @@ fn main() {
                         cursorpos = buf.find_subset(&needle).unwrap_or(cursorpos);
                         // endwin(); println!("Searching for: {:?}", needle ); return;
                     }
-                    Rule::linenumber => {
-                        let linenr: usize = inner_cmd.as_str().parse().unwrap();
+                    Rule::gg_line => {
+                        let linenr: usize = inner_cmd.as_str().parse().unwrap_or(0);
                         cursorpos = linenr * SPALTEN; // jump to the line
                         if cursorpos > buf.len() { // detect file end
                             cursorpos = buf.len();
