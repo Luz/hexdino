@@ -4,6 +4,8 @@
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 
+#![deny(trivial_casts)]
+
 use std::io::prelude::*;
 use std::fs::OpenOptions;
 use std::io::SeekFrom;
@@ -306,7 +308,7 @@ fn main() {
 
                         if cstate == Cursorstate::Leftnibble {
                             // Left nibble
-                            if let Some(c) = (key as char).to_digit(16) {
+                            if let Some(c) = key.to_digit(16) {
                                 buf.insert(cursorpos, (c as u8) << 4);
                                 cstate = Cursorstate::Rightnibble;
                             }
@@ -315,7 +317,7 @@ fn main() {
                             if cursorpos == buf.len() {
                                 buf.insert(cursorpos, 0);
                             }
-                            if let Some(c) = (key as char).to_digit(16) {
+                            if let Some(c) = key.to_digit(16) {
                                 buf[cursorpos] = buf[cursorpos] & 0xF0 | c as u8;
                                 cstate = Cursorstate::Leftnibble;
                                 cursorpos += 1;
