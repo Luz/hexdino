@@ -2,6 +2,16 @@
 name = "hexdino"
 version = "0.1.0"
 authors = ["Luz"]
+description = "A hex editor with vim like keybindings written in Rust."
+homepage = "https://github.com/Luz/hexdino/"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Luz/hexdino/"
+include = ["/src/**/*.rs", "/src/**/*.pest", "/Cargo.toml", "/LICENSE", "/logo.png", "README.md"]
+
+[[bin]]
+name = "hexdino"
+path = "src/main.rs"
 
 [dependencies]
 libc = "^0.2"
