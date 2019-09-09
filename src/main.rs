@@ -55,6 +55,7 @@ fn main() {
     let mut screenoffset: usize = 0;
     const SPALTEN: usize = 16;
     let mut command = String::new();
+    let mut lastcommand = String::new();
     let mut debug = String::new();
 
     // start ncursesw
@@ -129,10 +130,14 @@ fn main() {
     draw(&buf[draw_range.0 .. draw_range.1], cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
 
     let mut quitnow = false;
+    let mut autoparse = false;
     while quitnow == false {
-        let key = std::char::from_u32(getch() as u32).unwrap();
-        addstr(&format!("   {:?}   ", key));
-        command.push_str(&key.clone().to_string());
+        let mut key: char = '0';
+        if !autoparse {
+            key = std::char::from_u32(getch() as u32).unwrap();
+            command.push_str(&key.clone().to_string());
+        }
+        autoparse = false;
 
         let parsethisstring = command.clone();
         let commands = IdentParser::parse(Rule::cmd_list, &parsethisstring)
@@ -242,6 +247,11 @@ fn main() {
                 }
                 Rule::helpfile => {
                     command.push_str("No helpfile yet");
+                }
+                Rule::repeat => {
+                    command = lastcommand.clone();
+                    clear = false;
+                    autoparse = true;
                 }
                 Rule::backspace => {
                     command.pop();
@@ -396,6 +406,9 @@ fn main() {
                 }
                 // TODO: define filename during runtime
                 save = false;
+            }
+            if !autoparse {
+                lastcommand = command.clone();
             }
             if clear {
                 command.clear();
