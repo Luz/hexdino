@@ -233,6 +233,7 @@ fn main() {
                     if cursorpos > 0 && cursorpos >= buf.len() {
                         cursorpos -= 1;
                     }
+                    lastcommand = command.clone();
                 }
                 Rule::insert => {
                     addstr("next chars will be inserted!");
@@ -298,7 +299,8 @@ fn main() {
                                 buf[cursorpos] = buf[cursorpos] & mask | (c as u8) << shift;
                             }
                         }
-
+                        lastcommand.clear();
+                        lastcommand.push_str(&format!("Command repeation for {:?} not yet implemented.", inner_cmd.as_rule()));
                     }
                     Rule::dd_lines => {
                         let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
@@ -309,9 +311,11 @@ fn main() {
                             endofline = cmp::min( endofline, buf.len() );
                             buf.drain(startofline..endofline);
                         }
+                        lastcommand = command.clone();
                     }
                     // TODO: use inner_cmd and not just "key"
                     Rule::insertment => {
+                        lastcommand = command.clone();
                         // addstr(&format!("Inserted: {:?}", inner_cmd.as_str()));
                         command.pop(); // remove the just inserted thing
                         clear = false;
@@ -336,6 +340,8 @@ fn main() {
                             buf.insert(cursorpos, key as u8);
                             cursorpos += 1;
                         }
+                        lastcommand.clear();
+                        lastcommand.push_str(&format!("Command repeation for {:?} not yet implemented.", inner_cmd.as_rule()));
                     }
                     Rule::searchstr => {
                         let search = inner_cmd.as_str().as_bytes();
@@ -406,9 +412,6 @@ fn main() {
                 }
                 // TODO: define filename during runtime
                 save = false;
-            }
-            if !autoparse {
-                lastcommand = command.clone();
             }
             if clear {
                 command.clear();
