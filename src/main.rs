@@ -75,20 +75,20 @@ fn main() {
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
+            endwin();
             println!("{}", f.to_string());
             println!("Usage: {} FILE [options]", program);
-            endwin();
             return;
         }
     };
     if matches.opt_present("v") {
-        println!("Version: {}", VERSION);
         endwin();
+        println!("Version: {}", VERSION);
         return;
     }
     if matches.opt_present("h") {
-        println!("Usage: {} FILE [options]", program);
         endwin();
+        println!("Usage: {} FILE [options]", program);
         return;
     }
 
@@ -116,8 +116,8 @@ fn main() {
         .create(true)
         .open(&path) {
         Err(why) => {
-            println!("Could not open {}: {}", path.display(), why.to_string());
             endwin();
+            println!("Could not open {}: {}", path.display(), why.to_string());
             return;
         }
         Ok(file) => file,
@@ -148,7 +148,7 @@ fn main() {
         for cmd in commands {
             match cmd.as_rule() {
                 Rule::down => {
-                    addstr(&format!("{:?}", cmd.as_rule()));
+                    // debug.push_str(&format!("{:?}", cmd.as_rule()));
                     if cursorpos + SPALTEN < buf.len() {
                         // not at end
                         cursorpos += SPALTEN;
@@ -220,7 +220,7 @@ fn main() {
                     cursorpos -= cursorpos % SPALTEN; // jump to start of line
                 }
                 Rule::replace => {
-                    // addstr("next char will be the replacement!");
+                    // debug.push_str("next char will be the replacement!");
                     clear = false;
                 }
                 Rule::remove => {
@@ -236,7 +236,7 @@ fn main() {
                     lastcommand = command.clone();
                 }
                 Rule::insert => {
-                    addstr("next chars will be inserted!");
+                    // debug.push_str("next chars will be inserted!");
                     clear = false;
                 }
                 Rule::jumpascii => {
@@ -273,7 +273,7 @@ fn main() {
                 match inner_cmd.as_rule() {
                     Rule::replacement => {
                         // TODO: use inner_cmd and not just "key"
-                        // addstr(&format!("Replacement: {:?}", inner_cmd.as_str()));
+                        // debug.push_str(&format!("Replacement: {:?}", inner_cmd.as_str()));
                         if cstate == Cursorstate::Asciichar {
                             if cursorpos >= buf.len() {
                                 buf.insert(cursorpos, 0);
@@ -316,7 +316,7 @@ fn main() {
                     // TODO: use inner_cmd and not just "key"
                     Rule::insertment => {
                         lastcommand = command.clone();
-                        // addstr(&format!("Inserted: {:?}", inner_cmd.as_str()));
+                        // debug.push_str(&format!("Inserted: {:?}", inner_cmd.as_str()));
                         command.pop(); // remove the just inserted thing
                         clear = false;
 
@@ -363,7 +363,7 @@ fn main() {
                             needle.push(nibble);
                         }
                         cursorpos = buf.find_subset(&needle).unwrap_or(cursorpos);
-                        // endwin(); println!("Searching for: {:?}", needle ); return;
+                        // debug.push_str(&format!("Searching for: {:?}", needle ));
                     }
                     Rule::gg_line => {
                         let linenr: usize = inner_cmd.as_str().parse().unwrap_or(0);
