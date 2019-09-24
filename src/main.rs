@@ -132,9 +132,8 @@ fn main() {
     let mut quitnow = false;
     let mut autoparse = false;
     while quitnow == false {
-        let mut key: char = '0';
         if !autoparse {
-            key = std::char::from_u32(getch() as u32).unwrap();
+            let key = std::char::from_u32(getch() as u32).unwrap();
             command.push_str(&key.clone().to_string());
         }
         autoparse = false;
@@ -272,8 +271,7 @@ fn main() {
             for inner_cmd in cmd.into_inner() {
                 match inner_cmd.as_rule() {
                     Rule::replacement => {
-                        // TODO: use inner_cmd and not just "key"
-                        // debug.push_str(&format!("Replacement: {:?}", inner_cmd.as_str()));
+                        let key = inner_cmd.as_str().chars().nth(0).unwrap_or('x');
                         if cstate == Cursorstate::Asciichar {
                             if cursorpos >= buf.len() {
                                 buf.insert(cursorpos, 0);
@@ -313,8 +311,8 @@ fn main() {
                         }
                         lastcommand = command.clone();
                     }
-                    // TODO: use inner_cmd and not just "key"
                     Rule::insertment => {
+                        let key = inner_cmd.as_str().chars().nth(0).unwrap_or('x');
                         lastcommand = command.clone();
                         // debug.push_str(&format!("Inserted: {:?}", inner_cmd.as_str()));
                         command.pop(); // remove the just inserted thing
