@@ -298,7 +298,7 @@ fn main() {
                             }
                         }
                         lastcommand.clear();
-                        lastcommand.push_str(&format!("Command repeation for {:?} not yet implemented.", inner_cmd.as_rule()));
+                        lastcommand.push_str(&format!("{}{}", command.chars().nth(0).unwrap_or('?'), key ));
                     }
                     Rule::dd_lines => {
                         let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
