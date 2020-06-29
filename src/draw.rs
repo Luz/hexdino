@@ -69,7 +69,7 @@ pub fn draw(
             let pos: usize = z*cols + s;
             color_ascii_cond(true, pos+cols*screenoffset == cursorpos, cstate);
             if pos < buf.len() {
-                if let c @ 32...126 = buf[pos] {
+                if let c @ 32 ..= 126 = buf[pos] {
                     addstr(&format!("{}", c as char));
                 } else {
                     // Mark non-ascii symbols

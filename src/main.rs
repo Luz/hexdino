@@ -351,11 +351,11 @@ fn main() {
                         let mut needle = vec![];
                         for i in 0..search.len() {
                             let nibble = match search[i] as u8 {
-                                c @ 48...57 => c - 48, // Numbers from 0 to 9
+                                c @ 48 ..= 57 => c - 48, // Numbers from 0 to 9
                                 b'x' => 0x10, // x is the wildcard
                                 b'X' => 0x10, // X is the wildcard
-                                c @ b'a'...b'f' => c - 87,
-                                c @ b'A'...b'F' => c - 55,
+                                c @ b'a' ..= b'f' => c - 87,
+                                c @ b'A' ..= b'F' => c - 55,
                                 _ => panic!("Should not get to this position!"),
                             };
                             needle.push(nibble);
