@@ -63,7 +63,8 @@ fn main() {
     cbreak();
     noecho();
     start_color();
-    init_pair(1, COLOR_GREEN, COLOR_BLACK);
+    use_default_colors();
+    init_pair(1, COLOR_GREEN, -1);
 
     let args: Vec<_> = env::args().collect();
     let program = args[0].clone();
