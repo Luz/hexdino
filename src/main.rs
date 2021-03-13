@@ -3,7 +3,6 @@
 //! A hex editor with vim like keybindings written in Rust.
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
-
 #![deny(trivial_casts)]
 
 use std::cmp;
@@ -127,7 +126,15 @@ fn main() {
         .expect("File could not be read.");
 
     let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
-    draw(&buf[draw_range.0 .. draw_range.1], cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
+    draw(
+        &buf[draw_range.0..draw_range.1],
+        cursorpos,
+        SPALTEN,
+        &command,
+        &mut debug,
+        cstate,
+        screenoffset,
+    );
 
     let mut quitnow = false;
     let mut autoparse = false;
@@ -298,15 +305,20 @@ fn main() {
                             }
                         }
                         lastcommand.clear();
-                        lastcommand.push_str(&format!("{}{}", command.chars().nth(0).unwrap_or('?'), key ));
+                        lastcommand.push_str(&format!(
+                            "{}{}",
+                            command.chars().nth(0).unwrap_or('?'),
+                            key
+                        ));
                     }
                     Rule::dd_lines => {
                         let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
                         // check if in valid range
                         if buf.len() > 0 && cursorpos < buf.len() {
                             let startofline = cursorpos - cursorpos % SPALTEN;
-                            let mut endofline = cursorpos - (cursorpos % SPALTEN) + (SPALTEN * amount ) ;
-                            endofline = cmp::min( endofline, buf.len() );
+                            let mut endofline =
+                                cursorpos - (cursorpos % SPALTEN) + (SPALTEN * amount);
+                            endofline = cmp::min(endofline, buf.len());
                             buf.drain(startofline..endofline);
                         }
                         lastcommand = command.clone();
@@ -339,7 +351,10 @@ fn main() {
                             cursorpos += 1;
                         }
                         lastcommand.clear();
-                        lastcommand.push_str(&format!("Command repeation for {:?} not yet implemented.", inner_cmd.as_rule()));
+                        lastcommand.push_str(&format!(
+                            "Command repeation for {:?} not yet implemented.",
+                            inner_cmd.as_rule()
+                        ));
                     }
                     Rule::searchstr => {
                         let search = inner_cmd.as_str().as_bytes();
@@ -351,11 +366,11 @@ fn main() {
                         let mut needle = vec![];
                         for i in 0..search.len() {
                             let nibble = match search[i] as u8 {
-                                c @ 48 ..= 57 => c - 48, // Numbers from 0 to 9
-                                b'x' => 0x10, // x is the wildcard
-                                b'X' => 0x10, // X is the wildcard
-                                c @ b'a' ..= b'f' => c - 87,
-                                c @ b'A' ..= b'F' => c - 55,
+                                c @ 48..=57 => c - 48, // Numbers from 0 to 9
+                                b'x' => 0x10,          // x is the wildcard
+                                b'X' => 0x10,          // X is the wildcard
+                                c @ b'a'..=b'f' => c - 87,
+                                c @ b'A'..=b'F' => c - 55,
                                 _ => panic!("Should not get to this position!"),
                             };
                             needle.push(nibble);
@@ -366,7 +381,8 @@ fn main() {
                     Rule::gg_line => {
                         let linenr: usize = inner_cmd.as_str().parse().unwrap_or(0);
                         cursorpos = linenr * SPALTEN; // jump to the line
-                        if cursorpos > buf.len() { // detect file end
+                        if cursorpos > buf.len() {
+                            // detect file end
                             cursorpos = buf.len();
                         }
                         cursorpos -= cursorpos % SPALTEN; // jump to start of line
@@ -392,15 +408,15 @@ fn main() {
                         }
                         Ok(file) => file,
                     };
-                    file.seek(SeekFrom::Start(0)).ok().expect(
-                        "Filepointer could not be set to 0",
-                    );
-                    file.write_all(&mut buf).ok().expect(
-                        "File could not be written.",
-                    );
-                    file.set_len(buf.len() as u64).ok().expect(
-                        "File could not be set to correct lenght.",
-                    );
+                    file.seek(SeekFrom::Start(0))
+                        .ok()
+                        .expect("Filepointer could not be set to 0");
+                    file.write_all(&mut buf)
+                        .ok()
+                        .expect("File could not be written.");
+                    file.set_len(buf.len() as u64)
+                        .ok()
+                        .expect("File could not be set to correct lenght.");
                     command.push_str("File saved!");
                 } else {
                     command.push_str("Careful, file could not be saved!");
@@ -419,12 +435,18 @@ fn main() {
             if cursorpos < screenoffset * SPALTEN {
                 screenoffset = cursorpos / SPALTEN;
             }
-
-
         }
 
-    let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
-        draw(&buf[draw_range.0 .. draw_range.1], cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
+        let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
+        draw(
+            &buf[draw_range.0..draw_range.1],
+            cursorpos,
+            SPALTEN,
+            &command,
+            &mut debug,
+            cstate,
+            screenoffset,
+        );
     }
 
     refresh();

@@ -1,7 +1,7 @@
 extern crate ncurses;
 use ncurses::*;
-use Cursorstate;
 use std::cmp;
+use Cursorstate;
 
 pub fn draw(
     buf: &[u8],
@@ -14,49 +14,52 @@ pub fn draw(
 ) {
     erase();
 
-//    debug.clear();
-//    let screensize = get_screen_size(cols);
-//    debug.push_str(&format!("   screensize:{:?}", screensize));
-//    debug.push_str(&format!("   screenoffset:{:?}", screenoffset));
-//    debug.push_str(&format!("   buf.len():{:?}", buf.len()));
+    //    debug.clear();
+    //    let screensize = get_screen_size(cols);
+    //    debug.push_str(&format!("   screensize:{:?}", screensize));
+    //    debug.push_str(&format!("   screenoffset:{:?}", screenoffset));
+    //    debug.push_str(&format!("   buf.len():{:?}", buf.len()));
 
     let screenheight: usize;
     screenheight = getmaxy(stdscr()) as usize;
-//    debug.push_str(&format!("   screenheight:{:?}", screenheight));
+    //    debug.push_str(&format!("   screenheight:{:?}", screenheight));
 
     let mut tmpbuflen = buf.len();
-    if tmpbuflen >= 1 { tmpbuflen -= 1; }
+    if tmpbuflen >= 1 {
+        tmpbuflen -= 1;
+    }
     let rows = tmpbuflen / cols + 1;
 
-//    debug.push_str(&format!("   rows:{:?}", rows));
+    //    debug.push_str(&format!("   rows:{:?}", rows));
 
     for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=SPALTEN)
-        addstr(&format!("{:08X}: ", get_absolute_line(cols, screenoffset, z)));
+        addstr(&format!(
+            "{:08X}: ",
+            get_absolute_line(cols, screenoffset, z)
+        ));
         // Additional space between line number and hex
         addstr(" ");
         for s in 0..cols {
-            let pos: usize = z*cols + s;
+            let pos: usize = z * cols + s;
             if pos < buf.len() {
-
-                color_left_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
                 addstr(&format!("{:01X}", buf[pos] >> 4));
-                color_left_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
 
-                color_right_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
                 addstr(&format!("{:01X}", buf[pos] & 0x0F));
-                color_right_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
 
                 addstr(" ");
             } else if pos == buf.len() {
-
-                color_left_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
                 addstr("-");
-                color_left_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
 
-                color_right_nibble_cond(true, pos+cols*screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
                 addstr("-");
-                color_right_nibble_cond(false, pos+cols*screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
 
                 addstr(" ");
             } else {
@@ -66,10 +69,10 @@ pub fn draw(
         // Additional space between hex and ascii
         addstr(" ");
         for s in 0..cols {
-            let pos: usize = z*cols + s;
-            color_ascii_cond(true, pos+cols*screenoffset == cursorpos, cstate);
+            let pos: usize = z * cols + s;
+            color_ascii_cond(true, pos + cols * screenoffset == cursorpos, cstate);
             if pos < buf.len() {
-                if let c @ 32 ..= 126 = buf[pos] {
+                if let c @ 32..=126 = buf[pos] {
                     addstr(&format!("{}", c as char));
                 } else {
                     // Mark non-ascii symbols
@@ -80,11 +83,11 @@ pub fn draw(
                 addstr(" ");
             }
 
-            color_ascii_cond(false, pos+cols*screenoffset == cursorpos, cstate);
+            color_ascii_cond(false, pos + cols * screenoffset == cursorpos, cstate);
         }
         addstr("\n");
     }
-    for _ in 1 .. screenheight - rows {
+    for _ in 1..screenheight - rows {
         // Put the cursor on last line of terminal
         addstr("\n");
     }
@@ -95,9 +98,7 @@ pub fn draw(
 fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
     return z * cols + screenoffset * cols;
 }
-pub fn get_screen_size(
-    cols: usize,
-    ) -> usize {
+pub fn get_screen_size(cols: usize) -> usize {
     let screenheight: usize;
     screenheight = getmaxy(stdscr()) as usize;
 
@@ -105,7 +106,7 @@ pub fn get_screen_size(
 
     // Last line reserved for Status/Commands/etc (Like in vim)
     if screenheight >= 1 {
-        ret = (screenheight-1) * cols;
+        ret = (screenheight - 1) * cols;
     }
     return ret;
 }
@@ -113,9 +114,8 @@ pub fn get_absolute_draw_indices(
     buflen: usize,
     cols: usize,
     screenoffset: usize,
-    ) -> (usize, usize) {
-
-    let max_draw_len:usize = cmp::min(buflen, get_screen_size(cols)); //hier muss bei get_screen_size noch auf 16er abgerundet werden?
+) -> (usize, usize) {
+    let max_draw_len: usize = cmp::min(buflen, get_screen_size(cols)); //hier muss bei get_screen_size noch auf 16er abgerundet werden?
 
     let starting_pos: usize = screenoffset * cols;
     let mut ending_pos: usize = starting_pos + max_draw_len;
