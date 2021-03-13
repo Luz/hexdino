@@ -1,20 +1,20 @@
 movement		= _{ down | up | left | right | start | end | bottom }
-down				= { "j" | "[B" }
-up					= { "k" | "[A" }
-left				= { "h" | "[D" }
-right				= { "l" | "[C" }
-start				= { "0" }
-end					= { "$" }
+down			= { "j" | "[B" }
+up			= { "k" | "[A" }
+left			= { "h" | "[D" }
+right			= { "l" | "[C" }
+start			= { "0" }
+end			= { "$" }
 bottom			= { "G" }
 
 // Do not allow escape as replacement char
-replacement	= { !"\u{1b}" ~ any }
+replacement		= { !"\u{1b}" ~ any }
 replaceby		= { &replace ~ any ~ replacement }
 replace			= { "r" }
 remove			= { "x" }
-dd_lines			= { ('0'..'9')* }
-dd	= { dd_lines ~ "dd" }
-insertment	= { !"\u{1b}" ~ any }
+dd_lines		= { ('0'..'9')* }
+dd			= { dd_lines ~ "dd" }
+insertment		= { !"\u{1b}" ~ any }
 insertby		= { &insert ~ any ~ insertment }
 insert			= { "i" }
 jumpascii		= { "J" }
@@ -22,22 +22,22 @@ helpfile		= { "?" }
 repeat			= { "." }
 searchstr		= { (!("\u{1b}" | "\n") ~ any)* }
 search			= { "/" ~ searchstr ~ "\n" }
-hex_digit   = @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
-searchbytes	= { ( hex_digit{2} )* }
-hexsearch   = { "/" ~ searchbytes ~ "\n" }
+hex_digit   		= @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
+searchbytes		= { ( hex_digit{2} )* }
+hexsearch   		= { "/" ~ searchbytes ~ "\n" }
 gg_line			= { ('0'..'9')* }
-gg					= {	gg_line ~ "gg" }
-quickstuff  = _{ replaceby | replace | remove | dd | insertby | insert | jumpascii | helpfile | repeat | hexsearch | search | gg }
+gg			= { gg_line ~ "gg" }
+quickstuff  		= _{ replaceby | replace | remove | dd | insertby | insert | jumpascii | helpfile | repeat | hexsearch | search | gg }
 
-saveandexit	= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
-exit				= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority
-save				= { (":" ~ ("write!" | "write" | "w!" | "w") ~ "\n") } // careful, notice priority
-cmd					= _{ ( saveandexit | exit | save ) }
+saveandexit		= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
+exit			= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority
+save			= { (":" ~ ("write!" | "write" | "w!" | "w") ~ "\n") } // careful, notice priority
+cmd			= _{ ( saveandexit | exit | save ) }
 
 // consume any "not escapes" until first escape
-escape = { (!("\u{1b}") ~ any)* ~ "\u{1b}" }
+escape			= { (!("\u{1b}") ~ any)* ~ "\u{1b}" }
 // consume any "not backspaces" until first backspace
-backspace = { (!("\u{7f}") ~ any)* ~ "\u{7f}" }
+backspace		= { (!("\u{7f}") ~ any)* ~ "\u{7f}" }
 
 // Not escape and not Enter
 gatherone		= @{ !("\u{1b}" | "\n") ~ any }
