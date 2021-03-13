@@ -6,13 +6,12 @@
 
 #![deny(trivial_casts)]
 
-use std::io::prelude::*;
+use std::cmp;
+use std::env;
 use std::fs::OpenOptions;
+use std::io::prelude::*;
 use std::io::SeekFrom;
 use std::path::Path;
-use std::error::Error;
-use std::env;
-use std::cmp;
 
 mod draw;
 use draw::draw;
@@ -114,7 +113,8 @@ fn main() {
         .read(true)
         .write(true)
         .create(true)
-        .open(&path) {
+        .open(&path)
+    {
         Err(why) => {
             endwin();
             println!("Could not open {}: {}", path.display(), why.to_string());
@@ -122,9 +122,9 @@ fn main() {
         }
         Ok(file) => file,
     };
-    file.read_to_end(&mut buf).ok().expect(
-        "File could not be read.",
-    );
+    file.read_to_end(&mut buf)
+        .ok()
+        .expect("File could not be read.");
 
     let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
     draw(&buf[draw_range.0 .. draw_range.1], cursorpos, SPALTEN, &command, &mut debug, cstate, screenoffset);
@@ -385,13 +385,10 @@ fn main() {
                         .read(true)
                         .write(true)
                         .create(true)
-                        .open(&path) {
+                        .open(&path)
+                    {
                         Err(why) => {
-                            panic!(
-                                "Could not open {}: {}",
-                                path.display(),
-                                Error::description(&why)
-                            )
+                            panic!("Could not open {}: {}", path.display(), why.to_string())
                         }
                         Ok(file) => file,
                     };
