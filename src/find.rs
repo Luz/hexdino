@@ -24,7 +24,6 @@ impl FindOptSubset for Vec<u8> {
                 // or first nibble matches when second nibble is wildcard,
                 // or second nibble matches when first nibble is wildcard.
                 // or two wildcards at that position.
-                #![rustfmt::skip]
                 if !(
                     ((subset[2*b  ] == self[a + b]>>4) && (subset[2*b+1] == self[a + b]%16)) ||
                     ((subset[2*b  ] == self[a + b]>>4) && (subset[2*b+1] >= 0x10)) ||
