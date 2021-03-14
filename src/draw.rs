@@ -33,7 +33,7 @@ pub fn draw(
     //    debug.push_str(&format!("   rows:{:?}", rows));
 
     for z in 0..rows {
-        // 8 hex digits (4GB/cols or 0.25GB@cols=SPALTEN)
+        // 8 hex digits (4GB/cols or 0.25GB@cols=COLS)
         addstr(&format!(
             "{:08X}: ",
             get_absolute_line(cols, screenoffset, z)

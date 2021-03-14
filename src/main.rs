@@ -51,7 +51,7 @@ fn main() {
     let mut cstate: Cursorstate = Cursorstate::Leftnibble;
     // 0 = display data from first line of file
     let mut screenoffset: usize = 0;
-    const SPALTEN: usize = 16;
+    const COLS: usize = 16;
     let mut command = String::new();
     let mut lastcommand = String::new();
     let mut debug = String::new();
@@ -126,11 +126,11 @@ fn main() {
         .ok()
         .expect("File could not be read.");
 
-    let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
+    let draw_range = get_absolute_draw_indices(buf.len(), COLS, screenoffset);
     draw(
         &buf[draw_range.0..draw_range.1],
         cursorpos,
-        SPALTEN,
+        COLS,
         &command,
         &mut debug,
         cstate,
@@ -156,9 +156,9 @@ fn main() {
             match cmd.as_rule() {
                 Rule::down => {
                     // debug.push_str(&format!("{:?}", cmd.as_rule()));
-                    if cursorpos + SPALTEN < buf.len() {
+                    if cursorpos + COLS < buf.len() {
                         // not at end
-                        cursorpos += SPALTEN;
+                        cursorpos += COLS;
                     } else {
                         // when at end
                         if buf.len() != 0 {
@@ -168,8 +168,8 @@ fn main() {
                     }
                 }
                 Rule::up => {
-                    if cursorpos >= SPALTEN {
-                        cursorpos -= SPALTEN;
+                    if cursorpos >= COLS {
+                        cursorpos -= COLS;
                     }
                 }
                 Rule::left => {
@@ -204,16 +204,16 @@ fn main() {
                     }
                 }
                 Rule::start => {
-                    cursorpos -= cursorpos % SPALTEN; // jump to start of line
+                    cursorpos -= cursorpos % COLS; // jump to start of line
                     if cstate == Cursorstate::Rightnibble {
                         cstate = Cursorstate::Leftnibble;
                     }
                 }
                 Rule::end => {
                     // check if no overflow
-                    if cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1) < buf.len() {
+                    if cursorpos - (cursorpos % COLS) + (COLS - 1) < buf.len() {
                         // jump to end of line
-                        cursorpos = cursorpos - (cursorpos % SPALTEN) + (SPALTEN - 1);
+                        cursorpos = cursorpos - (cursorpos % COLS) + (COLS - 1);
                     } else {
                         // jump to end of line
                         cursorpos = buf.len() - 1
@@ -224,7 +224,7 @@ fn main() {
                 }
                 Rule::bottom => {
                     cursorpos = buf.len() - 1;
-                    cursorpos -= cursorpos % SPALTEN; // jump to start of line
+                    cursorpos -= cursorpos % COLS; // jump to start of line
                 }
                 Rule::replace => {
                     // debug.push_str("next char will be the replacement!");
@@ -316,9 +316,8 @@ fn main() {
                         let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
                         // check if in valid range
                         if buf.len() > 0 && cursorpos < buf.len() {
-                            let startofline = cursorpos - cursorpos % SPALTEN;
-                            let mut endofline =
-                                cursorpos - (cursorpos % SPALTEN) + (SPALTEN * amount);
+                            let startofline = cursorpos - cursorpos % COLS;
+                            let mut endofline = cursorpos - (cursorpos % COLS) + (COLS * amount);
                             endofline = cmp::min(endofline, buf.len());
                             buf.drain(startofline..endofline);
                         }
@@ -381,12 +380,12 @@ fn main() {
                     }
                     Rule::gg_line => {
                         let linenr: usize = inner_cmd.as_str().parse().unwrap_or(0);
-                        cursorpos = linenr * SPALTEN; // jump to the line
+                        cursorpos = linenr * COLS; // jump to the line
                         if cursorpos > buf.len() {
                             // detect file end
                             cursorpos = buf.len();
                         }
-                        cursorpos -= cursorpos % SPALTEN; // jump to start of line
+                        cursorpos -= cursorpos % COLS; // jump to start of line
                     }
                     Rule::escape => (),
                     Rule::gatherone => clear = false,
@@ -430,19 +429,19 @@ fn main() {
             }
 
             // Always move screen when cursor leaves screen
-            if cursorpos > (screenheight + screenoffset - 1) * SPALTEN - 1 {
-                screenoffset = 2 + cursorpos / SPALTEN - screenheight;
+            if cursorpos > (screenheight + screenoffset - 1) * COLS - 1 {
+                screenoffset = 2 + cursorpos / COLS - screenheight;
             }
-            if cursorpos < screenoffset * SPALTEN {
-                screenoffset = cursorpos / SPALTEN;
+            if cursorpos < screenoffset * COLS {
+                screenoffset = cursorpos / COLS;
             }
         }
 
-        let draw_range = get_absolute_draw_indices(buf.len(), SPALTEN, screenoffset);
+        let draw_range = get_absolute_draw_indices(buf.len(), COLS, screenoffset);
         draw(
             &buf[draw_range.0..draw_range.1],
             cursorpos,
-            SPALTEN,
+            COLS,
             &command,
             &mut debug,
             cstate,
