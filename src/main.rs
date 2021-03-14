@@ -320,6 +320,9 @@ fn main() {
                             let mut endofline = cursorpos - (cursorpos % COLS) + (COLS * amount);
                             endofline = cmp::min(endofline, buf.len());
                             buf.drain(startofline..endofline);
+                            if buf.len() > 0 && cursorpos >= buf.len() {
+                                cursorpos = buf.len() - 1;
+                            }
                         }
                         lastcommand = command.clone();
                     }
