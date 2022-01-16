@@ -22,12 +22,12 @@ helpfile		= { "?" }
 repeat			= { "." }
 searchstr		= { (!("\u{1b}" | "\n") ~ any)* }
 search			= { "/" ~ searchstr ~ "\n" }
-hex_digit   		= @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
+hex_digit		= @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
 searchbytes		= { ( hex_digit{2} )* }
-hexsearch   		= { "/" ~ searchbytes ~ "\n" }
+hexsearch		= { "/" ~ searchbytes ~ "\n" }
 gg_line			= { ('0'..'9')* }
 gg			= { gg_line ~ "gg" }
-quickstuff  		= _{ replaceby | replace | remove | dd | insertby | insert | jumpascii | helpfile | repeat | hexsearch | search | gg }
+quickstuff		= _{ replaceby | replace | remove | dd | insertby | insert | jumpascii | helpfile | repeat | hexsearch | search | gg }
 
 saveandexit		= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
 exit			= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority
