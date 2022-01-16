@@ -38,17 +38,25 @@ extern crate memmem;
 use memmem::{Searcher, TwoWaySearcher};
 
 #[derive(PartialEq, Copy, Clone)]
-pub enum Cursorstate {
+pub enum CursorSelects {
     Leftnibble,
     Rightnibble,
     Asciichar,
 }
 
+#[derive(PartialEq, Copy, Clone)]
+pub struct CursorState {
+    pos: usize,
+    sel: CursorSelects,
+}
+
 fn main() {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     let mut buf = vec![];
-    let mut cursorpos: usize = 0;
-    let mut cstate: Cursorstate = Cursorstate::Leftnibble;
+    let mut cursor = CursorState {
+        pos: 0,
+        sel: CursorSelects::Leftnibble,
+    };
     // 0 = display data from first line of file
     let mut screenoffset: usize = 0;
     const COLS: usize = 16;
@@ -129,11 +137,10 @@ fn main() {
     let draw_range = get_absolute_draw_indices(buf.len(), COLS, screenoffset);
     draw(
         &buf[draw_range.0..draw_range.1],
-        cursorpos,
         COLS,
         &command,
         &mut debug,
-        cstate,
+        cursor,
         screenoffset,
     );
 
@@ -156,75 +163,75 @@ fn main() {
             match cmd.as_rule() {
                 Rule::down => {
                     // debug.push_str(&format!("{:?}", cmd.as_rule()));
-                    if cursorpos + COLS < buf.len() {
+                    if cursor.pos + COLS < buf.len() {
                         // not at end
-                        cursorpos += COLS;
+                        cursor.pos += COLS;
                     } else {
                         // when at end
                         if buf.len() != 0 {
                             // Suppress underflow
-                            cursorpos = buf.len() - 1;
+                            cursor.pos = buf.len() - 1;
                         }
                     }
                 }
                 Rule::up => {
-                    if cursorpos >= COLS {
-                        cursorpos -= COLS;
+                    if cursor.pos >= COLS {
+                        cursor.pos -= COLS;
                     }
                 }
                 Rule::left => {
-                    if cstate == Cursorstate::Asciichar {
-                        if cursorpos > 0 {
-                            cursorpos -= 1;
+                    if cursor.sel == CursorSelects::Asciichar {
+                        if cursor.pos > 0 {
+                            cursor.pos -= 1;
                         }
-                    } else if cstate == Cursorstate::Rightnibble {
-                        cstate = Cursorstate::Leftnibble;
-                    } else if cstate == Cursorstate::Leftnibble {
-                        if cursorpos > 0 {
+                    } else if cursor.sel == CursorSelects::Rightnibble {
+                        cursor.sel = CursorSelects::Leftnibble;
+                    } else if cursor.sel == CursorSelects::Leftnibble {
+                        if cursor.pos > 0 {
                             // not at start
-                            cstate = Cursorstate::Rightnibble;
-                            cursorpos -= 1;
+                            cursor.sel = CursorSelects::Rightnibble;
+                            cursor.pos -= 1;
                         }
                     }
                 }
                 Rule::right => {
-                    if cstate == Cursorstate::Asciichar {
-                        if cursorpos + 1 < buf.len() {
+                    if cursor.sel == CursorSelects::Asciichar {
+                        if cursor.pos + 1 < buf.len() {
                             // not at end
-                            cursorpos += 1;
+                            cursor.pos += 1;
                         }
-                    } else if cstate == Cursorstate::Leftnibble {
-                        cstate = Cursorstate::Rightnibble;
-                    } else if cstate == Cursorstate::Rightnibble {
-                        if cursorpos + 1 < buf.len() {
+                    } else if cursor.sel == CursorSelects::Leftnibble {
+                        cursor.sel = CursorSelects::Rightnibble;
+                    } else if cursor.sel == CursorSelects::Rightnibble {
+                        if cursor.pos + 1 < buf.len() {
                             // not at end
-                            cstate = Cursorstate::Leftnibble;
-                            cursorpos += 1;
+                            cursor.sel = CursorSelects::Leftnibble;
+                            cursor.pos += 1;
                         }
                     }
                 }
                 Rule::start => {
-                    cursorpos -= cursorpos % COLS; // jump to start of line
-                    if cstate == Cursorstate::Rightnibble {
-                        cstate = Cursorstate::Leftnibble;
+                    cursor.pos -= cursor.pos % COLS; // jump to start of line
+                    if cursor.sel == CursorSelects::Rightnibble {
+                        cursor.sel = CursorSelects::Leftnibble;
                     }
                 }
                 Rule::end => {
                     // check if no overflow
-                    if cursorpos - (cursorpos % COLS) + (COLS - 1) < buf.len() {
+                    if cursor.pos - (cursor.pos % COLS) + (COLS - 1) < buf.len() {
                         // jump to end of line
-                        cursorpos = cursorpos - (cursorpos % COLS) + (COLS - 1);
+                        cursor.pos = cursor.pos - (cursor.pos % COLS) + (COLS - 1);
                     } else {
                         // jump to end of line
-                        cursorpos = buf.len() - 1
+                        cursor.pos = buf.len() - 1
                     }
-                    if cstate == Cursorstate::Leftnibble {
-                        cstate = Cursorstate::Rightnibble;
+                    if cursor.sel == CursorSelects::Leftnibble {
+                        cursor.sel = CursorSelects::Rightnibble;
                     }
                 }
                 Rule::bottom => {
-                    cursorpos = buf.len() - 1;
-                    cursorpos -= cursorpos % COLS; // jump to start of line
+                    cursor.pos = buf.len() - 1;
+                    cursor.pos -= cursor.pos % COLS; // jump to start of line
                 }
                 Rule::replace => {
                     // debug.push_str("next char will be the replacement!");
@@ -232,13 +239,13 @@ fn main() {
                 }
                 Rule::remove => {
                     // check if in valid range
-                    if buf.len() > 0 && cursorpos < buf.len() {
+                    if buf.len() > 0 && cursor.pos < buf.len() {
                         // remove the current char
-                        buf.remove(cursorpos);
+                        buf.remove(cursor.pos);
                     }
                     // always perform the movement if possible
-                    if cursorpos > 0 && cursorpos >= buf.len() {
-                        cursorpos -= 1;
+                    if cursor.pos > 0 && cursor.pos >= buf.len() {
+                        cursor.pos -= 1;
                     }
                     lastcommand = command.clone();
                 }
@@ -247,10 +254,10 @@ fn main() {
                     clear = false;
                 }
                 Rule::jumpascii => {
-                    if cstate == Cursorstate::Asciichar {
-                        cstate = Cursorstate::Leftnibble;
+                    if cursor.sel == CursorSelects::Asciichar {
+                        cursor.sel = CursorSelects::Leftnibble;
                     } else {
-                        cstate = Cursorstate::Asciichar;
+                        cursor.sel = CursorSelects::Asciichar;
                     }
                 }
                 Rule::helpfile => {
@@ -280,29 +287,29 @@ fn main() {
                 match inner_cmd.as_rule() {
                     Rule::replacement => {
                         let key = inner_cmd.as_str().chars().nth(0).unwrap_or('x');
-                        if cstate == Cursorstate::Asciichar {
-                            if cursorpos >= buf.len() {
-                                buf.insert(cursorpos, 0);
+                        if cursor.sel == CursorSelects::Asciichar {
+                            if cursor.pos >= buf.len() {
+                                buf.insert(cursor.pos, 0);
                             }
-                            // buf[cursorpos] = inner_cmd.as_str();
-                            buf[cursorpos] = key as u8;
+                            // buf[cursor.pos] = inner_cmd.as_str();
+                            buf[cursor.pos] = key as u8;
                         } else {
-                            let mask = if cstate == Cursorstate::Leftnibble {
+                            let mask = if cursor.sel == CursorSelects::Leftnibble {
                                 0x0F
                             } else {
                                 0xF0
                             };
-                            let shift = if cstate == Cursorstate::Leftnibble {
+                            let shift = if cursor.sel == CursorSelects::Leftnibble {
                                 4
                             } else {
                                 0
                             };
-                            if cursorpos >= buf.len() {
-                                buf.insert(cursorpos, 0);
+                            if cursor.pos >= buf.len() {
+                                buf.insert(cursor.pos, 0);
                             }
                             // Change the selected nibble
                             if let Some(c) = key.to_digit(16) {
-                                buf[cursorpos] = buf[cursorpos] & mask | (c as u8) << shift;
+                                buf[cursor.pos] = buf[cursor.pos] & mask | (c as u8) << shift;
                             }
                         }
                         lastcommand.clear();
@@ -315,13 +322,13 @@ fn main() {
                     Rule::dd_lines => {
                         let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
                         // check if in valid range
-                        if buf.len() > 0 && cursorpos < buf.len() {
-                            let startofline = cursorpos - cursorpos % COLS;
-                            let mut endofline = cursorpos - (cursorpos % COLS) + (COLS * amount);
+                        if buf.len() > 0 && cursor.pos < buf.len() {
+                            let startofline = cursor.pos - cursor.pos % COLS;
+                            let mut endofline = cursor.pos - (cursor.pos % COLS) + (COLS * amount);
                             endofline = cmp::min(endofline, buf.len());
                             buf.drain(startofline..endofline);
-                            if buf.len() > 0 && cursorpos >= buf.len() {
-                                cursorpos = buf.len() - 1;
+                            if buf.len() > 0 && cursor.pos >= buf.len() {
+                                cursor.pos = buf.len() - 1;
                             }
                         }
                         lastcommand = command.clone();
@@ -333,25 +340,25 @@ fn main() {
                         command.pop(); // remove the just inserted thing
                         clear = false;
 
-                        if cstate == Cursorstate::Leftnibble {
+                        if cursor.sel == CursorSelects::Leftnibble {
                             // Left nibble
                             if let Some(c) = key.to_digit(16) {
-                                buf.insert(cursorpos, (c as u8) << 4);
-                                cstate = Cursorstate::Rightnibble;
+                                buf.insert(cursor.pos, (c as u8) << 4);
+                                cursor.sel = CursorSelects::Rightnibble;
                             }
-                        } else if cstate == Cursorstate::Rightnibble {
+                        } else if cursor.sel == CursorSelects::Rightnibble {
                             // Right nibble
-                            if cursorpos == buf.len() {
-                                buf.insert(cursorpos, 0);
+                            if cursor.pos == buf.len() {
+                                buf.insert(cursor.pos, 0);
                             }
                             if let Some(c) = key.to_digit(16) {
-                                buf[cursorpos] = buf[cursorpos] & 0xF0 | c as u8;
-                                cstate = Cursorstate::Leftnibble;
-                                cursorpos += 1;
+                                buf[cursor.pos] = buf[cursor.pos] & 0xF0 | c as u8;
+                                cursor.sel = CursorSelects::Leftnibble;
+                                cursor.pos += 1;
                             }
-                        } else if cstate == Cursorstate::Asciichar {
-                            buf.insert(cursorpos, key as u8);
-                            cursorpos += 1;
+                        } else if cursor.sel == CursorSelects::Asciichar {
+                            buf.insert(cursor.pos, key as u8);
+                            cursor.pos += 1;
                         }
                         lastcommand.clear();
                         lastcommand.push_str(&format!(
@@ -362,7 +369,7 @@ fn main() {
                     Rule::searchstr => {
                         let search = inner_cmd.as_str().as_bytes();
                         let foundpos = TwoWaySearcher::new(&search);
-                        cursorpos = foundpos.search_in(&buf).unwrap_or(cursorpos);
+                        cursor.pos = foundpos.search_in(&buf).unwrap_or(cursor.pos);
                     }
                     Rule::searchbytes => {
                         let search = inner_cmd.as_str().as_bytes();
@@ -378,17 +385,17 @@ fn main() {
                             };
                             needle.push(nibble);
                         }
-                        cursorpos = buf.find_subset(&needle).unwrap_or(cursorpos);
+                        cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
                         // debug.push_str(&format!("Searching for: {:?}", needle ));
                     }
                     Rule::gg_line => {
                         let linenr: usize = inner_cmd.as_str().parse().unwrap_or(0);
-                        cursorpos = linenr * COLS; // jump to the line
-                        if cursorpos > buf.len() {
+                        cursor.pos = linenr * COLS; // jump to the line
+                        if cursor.pos > buf.len() {
                             // detect file end
-                            cursorpos = buf.len();
+                            cursor.pos = buf.len();
                         }
-                        cursorpos -= cursorpos % COLS; // jump to start of line
+                        cursor.pos -= cursor.pos % COLS; // jump to start of line
                     }
                     Rule::escape => (),
                     Rule::gatherone => clear = false,
@@ -432,22 +439,21 @@ fn main() {
             }
 
             // Always move screen when cursor leaves screen
-            if cursorpos > (screenheight + screenoffset - 1) * COLS - 1 {
-                screenoffset = 2 + cursorpos / COLS - screenheight;
+            if cursor.pos > (screenheight + screenoffset - 1) * COLS - 1 {
+                screenoffset = 2 + cursor.pos / COLS - screenheight;
             }
-            if cursorpos < screenoffset * COLS {
-                screenoffset = cursorpos / COLS;
+            if cursor.pos < screenoffset * COLS {
+                screenoffset = cursor.pos / COLS;
             }
         }
 
         let draw_range = get_absolute_draw_indices(buf.len(), COLS, screenoffset);
         draw(
             &buf[draw_range.0..draw_range.1],
-            cursorpos,
             COLS,
             &command,
             &mut debug,
-            cstate,
+            cursor,
             screenoffset,
         );
     }

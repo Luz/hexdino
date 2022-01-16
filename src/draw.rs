@@ -1,15 +1,15 @@
 extern crate ncurses;
 use ncurses::*;
 use std::cmp;
-use Cursorstate;
+use CursorSelects;
+use CursorState;
 
 pub fn draw(
     buf: &[u8],
-    cursorpos: usize,
     cols: usize,
     command: &String,
     debug: &mut String,
-    cstate: Cursorstate,
+    cursor: CursorState,
     screenoffset: usize,
 ) {
     erase();
@@ -43,23 +43,23 @@ pub fn draw(
         for s in 0..cols {
             let pos: usize = z * cols + s;
             if pos < buf.len() {
-                color_left_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
                 addstr(&format!("{:01X}", buf[pos] >> 4));
-                color_left_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
-                color_right_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
                 addstr(&format!("{:01X}", buf[pos] & 0x0F));
-                color_right_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
                 addstr(" ");
             } else if pos == buf.len() {
-                color_left_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
                 addstr("-");
-                color_left_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
+                color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
-                color_right_nibble_cond(true, pos + cols * screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
                 addstr("-");
-                color_right_nibble_cond(false, pos + cols * screenoffset == cursorpos, cstate);
+                color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
                 addstr(" ");
             } else {
@@ -70,7 +70,7 @@ pub fn draw(
         addstr(" ");
         for s in 0..cols {
             let pos: usize = z * cols + s;
-            color_ascii_cond(true, pos + cols * screenoffset == cursorpos, cstate);
+            color_ascii_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
             if pos < buf.len() {
                 if let c @ 32..=126 = buf[pos] {
                     addstr(&format!("{}", c as char));
@@ -83,7 +83,7 @@ pub fn draw(
                 addstr(" ");
             }
 
-            color_ascii_cond(false, pos + cols * screenoffset == cursorpos, cstate);
+            color_ascii_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
         }
         addstr("\n");
     }
@@ -126,65 +126,65 @@ pub fn get_absolute_draw_indices(
     return (starting_pos, ending_pos);
 }
 
-fn color_left_nibble(color: bool, cstate: Cursorstate) {
+fn color_left_nibble(color: bool, cursor: CursorState) {
     if color {
-        if cstate == Cursorstate::Leftnibble {
+        if cursor.sel == CursorSelects::Leftnibble {
             attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cstate == Cursorstate::Asciichar {
+        } else if cursor.sel == CursorSelects::Asciichar {
             attron(A_UNDERLINE());
         }
     } else {
-        if cstate == Cursorstate::Leftnibble {
+        if cursor.sel == CursorSelects::Leftnibble {
             attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cstate == Cursorstate::Asciichar {
+        } else if cursor.sel == CursorSelects::Asciichar {
             attroff(A_UNDERLINE());
         }
     }
 }
-fn color_left_nibble_cond(color: bool, condition: bool, cstate: Cursorstate) {
+fn color_left_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
     if condition {
-        color_left_nibble(color, cstate);
+        color_left_nibble(color, cursor);
     }
 }
 
-fn color_right_nibble(color: bool, cstate: Cursorstate) {
+fn color_right_nibble(color: bool, cursor: CursorState) {
     if color {
-        if cstate == Cursorstate::Rightnibble {
+        if cursor.sel == CursorSelects::Rightnibble {
             attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cstate == Cursorstate::Asciichar {
+        } else if cursor.sel == CursorSelects::Asciichar {
             attron(A_UNDERLINE());
         }
     } else {
-        if cstate == Cursorstate::Rightnibble {
+        if cursor.sel == CursorSelects::Rightnibble {
             attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cstate == Cursorstate::Asciichar {
+        } else if cursor.sel == CursorSelects::Asciichar {
             attroff(A_UNDERLINE());
         }
     }
 }
-fn color_right_nibble_cond(color: bool, condition: bool, cstate: Cursorstate) {
+fn color_right_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
     if condition {
-        color_right_nibble(color, cstate);
+        color_right_nibble(color, cursor);
     }
 }
 
-fn color_ascii(color: bool, cstate: Cursorstate) {
+fn color_ascii(color: bool, cursor: CursorState) {
     if color {
-        if cstate == Cursorstate::Asciichar {
+        if cursor.sel == CursorSelects::Asciichar {
             attron(COLOR_PAIR(1) | A_STANDOUT());
         } else {
             attron(A_UNDERLINE());
         }
     } else {
-        if cstate == Cursorstate::Asciichar {
+        if cursor.sel == CursorSelects::Asciichar {
             attroff(COLOR_PAIR(1) | A_STANDOUT());
         } else {
             attroff(A_UNDERLINE());
         }
     }
 }
-fn color_ascii_cond(color: bool, condition: bool, cstate: Cursorstate) {
+fn color_ascii_cond(color: bool, condition: bool, cursor: CursorState) {
     if condition {
-        color_ascii(color, cstate);
+        color_ascii(color, cursor);
     }
 }
