@@ -44,7 +44,7 @@ pub enum CursorSelects {
     Asciichar,
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct CursorState {
     pos: usize,
     sel: CursorSelects,
