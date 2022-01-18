@@ -261,7 +261,9 @@ fn main() {
                     }
                 }
                 Rule::helpfile => {
+                    command.pop();
                     command.push_str("No helpfile yet");
+                    clear = false;
                 }
                 Rule::repeat => {
                     command = lastcommand.clone();
