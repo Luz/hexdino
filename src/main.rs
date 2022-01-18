@@ -39,9 +39,9 @@ use memmem::{Searcher, TwoWaySearcher};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum CursorSelects {
-    Leftnibble,
-    Rightnibble,
-    Asciichar,
+    LeftNibble,
+    RightNibble,
+    AsciiChar,
 }
 
 #[derive(Copy, Clone)]
@@ -55,7 +55,7 @@ fn main() {
     let mut buf = vec![];
     let mut cursor = CursorState {
         pos: 0,
-        sel: CursorSelects::Leftnibble,
+        sel: CursorSelects::LeftNibble,
     };
     // 0 = display data from first line of file
     let mut screenoffset: usize = 0;
@@ -180,40 +180,40 @@ fn main() {
                     }
                 }
                 Rule::left => {
-                    if cursor.sel == CursorSelects::Asciichar {
+                    if cursor.sel == CursorSelects::AsciiChar {
                         if cursor.pos > 0 {
                             cursor.pos -= 1;
                         }
-                    } else if cursor.sel == CursorSelects::Rightnibble {
-                        cursor.sel = CursorSelects::Leftnibble;
-                    } else if cursor.sel == CursorSelects::Leftnibble {
+                    } else if cursor.sel == CursorSelects::RightNibble {
+                        cursor.sel = CursorSelects::LeftNibble;
+                    } else if cursor.sel == CursorSelects::LeftNibble {
                         if cursor.pos > 0 {
                             // not at start
-                            cursor.sel = CursorSelects::Rightnibble;
+                            cursor.sel = CursorSelects::RightNibble;
                             cursor.pos -= 1;
                         }
                     }
                 }
                 Rule::right => {
-                    if cursor.sel == CursorSelects::Asciichar {
+                    if cursor.sel == CursorSelects::AsciiChar {
                         if cursor.pos + 1 < buf.len() {
                             // not at end
                             cursor.pos += 1;
                         }
-                    } else if cursor.sel == CursorSelects::Leftnibble {
-                        cursor.sel = CursorSelects::Rightnibble;
-                    } else if cursor.sel == CursorSelects::Rightnibble {
+                    } else if cursor.sel == CursorSelects::LeftNibble {
+                        cursor.sel = CursorSelects::RightNibble;
+                    } else if cursor.sel == CursorSelects::RightNibble {
                         if cursor.pos + 1 < buf.len() {
                             // not at end
-                            cursor.sel = CursorSelects::Leftnibble;
+                            cursor.sel = CursorSelects::LeftNibble;
                             cursor.pos += 1;
                         }
                     }
                 }
                 Rule::start => {
                     cursor.pos -= cursor.pos % COLS; // jump to start of line
-                    if cursor.sel == CursorSelects::Rightnibble {
-                        cursor.sel = CursorSelects::Leftnibble;
+                    if cursor.sel == CursorSelects::RightNibble {
+                        cursor.sel = CursorSelects::LeftNibble;
                     }
                 }
                 Rule::end => {
@@ -225,8 +225,8 @@ fn main() {
                         // jump to end of line
                         cursor.pos = buf.len() - 1
                     }
-                    if cursor.sel == CursorSelects::Leftnibble {
-                        cursor.sel = CursorSelects::Rightnibble;
+                    if cursor.sel == CursorSelects::LeftNibble {
+                        cursor.sel = CursorSelects::RightNibble;
                     }
                 }
                 Rule::bottom => {
@@ -254,10 +254,10 @@ fn main() {
                     clear = false;
                 }
                 Rule::jumpascii => {
-                    if cursor.sel == CursorSelects::Asciichar {
-                        cursor.sel = CursorSelects::Leftnibble;
+                    if cursor.sel == CursorSelects::AsciiChar {
+                        cursor.sel = CursorSelects::LeftNibble;
                     } else {
-                        cursor.sel = CursorSelects::Asciichar;
+                        cursor.sel = CursorSelects::AsciiChar;
                     }
                 }
                 Rule::helpfile => {
@@ -287,19 +287,19 @@ fn main() {
                 match inner_cmd.as_rule() {
                     Rule::replacement => {
                         let key = inner_cmd.as_str().chars().nth(0).unwrap_or('x');
-                        if cursor.sel == CursorSelects::Asciichar {
+                        if cursor.sel == CursorSelects::AsciiChar {
                             if cursor.pos >= buf.len() {
                                 buf.insert(cursor.pos, 0);
                             }
                             // buf[cursor.pos] = inner_cmd.as_str();
                             buf[cursor.pos] = key as u8;
                         } else {
-                            let mask = if cursor.sel == CursorSelects::Leftnibble {
+                            let mask = if cursor.sel == CursorSelects::LeftNibble {
                                 0x0F
                             } else {
                                 0xF0
                             };
-                            let shift = if cursor.sel == CursorSelects::Leftnibble {
+                            let shift = if cursor.sel == CursorSelects::LeftNibble {
                                 4
                             } else {
                                 0
@@ -340,23 +340,23 @@ fn main() {
                         command.pop(); // remove the just inserted thing
                         clear = false;
 
-                        if cursor.sel == CursorSelects::Leftnibble {
+                        if cursor.sel == CursorSelects::LeftNibble {
                             // Left nibble
                             if let Some(c) = key.to_digit(16) {
                                 buf.insert(cursor.pos, (c as u8) << 4);
-                                cursor.sel = CursorSelects::Rightnibble;
+                                cursor.sel = CursorSelects::RightNibble;
                             }
-                        } else if cursor.sel == CursorSelects::Rightnibble {
+                        } else if cursor.sel == CursorSelects::RightNibble {
                             // Right nibble
                             if cursor.pos == buf.len() {
                                 buf.insert(cursor.pos, 0);
                             }
                             if let Some(c) = key.to_digit(16) {
                                 buf[cursor.pos] = buf[cursor.pos] & 0xF0 | c as u8;
-                                cursor.sel = CursorSelects::Leftnibble;
+                                cursor.sel = CursorSelects::LeftNibble;
                                 cursor.pos += 1;
                             }
-                        } else if cursor.sel == CursorSelects::Asciichar {
+                        } else if cursor.sel == CursorSelects::AsciiChar {
                             buf.insert(cursor.pos, key as u8);
                             cursor.pos += 1;
                         }

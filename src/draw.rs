@@ -128,15 +128,15 @@ pub fn get_absolute_draw_indices(
 
 fn color_left_nibble(color: bool, cursor: CursorState) {
     if color {
-        if cursor.sel == CursorSelects::Leftnibble {
+        if cursor.sel == CursorSelects::LeftNibble {
             attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::Asciichar {
+        } else if cursor.sel == CursorSelects::AsciiChar {
             attron(A_UNDERLINE());
         }
     } else {
-        if cursor.sel == CursorSelects::Leftnibble {
+        if cursor.sel == CursorSelects::LeftNibble {
             attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::Asciichar {
+        } else if cursor.sel == CursorSelects::AsciiChar {
             attroff(A_UNDERLINE());
         }
     }
@@ -149,15 +149,15 @@ fn color_left_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
 
 fn color_right_nibble(color: bool, cursor: CursorState) {
     if color {
-        if cursor.sel == CursorSelects::Rightnibble {
+        if cursor.sel == CursorSelects::RightNibble {
             attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::Asciichar {
+        } else if cursor.sel == CursorSelects::AsciiChar {
             attron(A_UNDERLINE());
         }
     } else {
-        if cursor.sel == CursorSelects::Rightnibble {
+        if cursor.sel == CursorSelects::RightNibble {
             attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::Asciichar {
+        } else if cursor.sel == CursorSelects::AsciiChar {
             attroff(A_UNDERLINE());
         }
     }
@@ -170,13 +170,13 @@ fn color_right_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
 
 fn color_ascii(color: bool, cursor: CursorState) {
     if color {
-        if cursor.sel == CursorSelects::Asciichar {
+        if cursor.sel == CursorSelects::AsciiChar {
             attron(COLOR_PAIR(1) | A_STANDOUT());
         } else {
             attron(A_UNDERLINE());
         }
     } else {
-        if cursor.sel == CursorSelects::Asciichar {
+        if cursor.sel == CursorSelects::AsciiChar {
             attroff(COLOR_PAIR(1) | A_STANDOUT());
         } else {
             attroff(A_UNDERLINE());
