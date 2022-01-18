@@ -43,5 +43,5 @@ backspace		= { (!("\u{7f}") ~ any)* ~ "\u{7f}" }
 gatherone		= @{ !("\u{1b}" | "\n") ~ any }
 gatherall		= { gatherone* }
 
-cmd_list		= _{ ( movement | escape | backspace | quickstuff | cmd | gatherall ) }
+cmd_list		= _{ ( movement | escape | quickstuff | backspace | cmd | gatherall ) }
 
