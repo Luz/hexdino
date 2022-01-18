@@ -15,7 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 libc = "^0.2"
-ncurses = "^5.91"
+ncurses = "^5.98"
 getopts = "^0.2"
 pest = "^1.0"
 pest_derive = "^1.0"
