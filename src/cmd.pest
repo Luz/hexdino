@@ -14,9 +14,9 @@ replace			= { "r" }
 remove			= { "x" }
 dd_lines		= { ('0'..'9')* }
 dd			= { dd_lines ~ "dd" }
-insertment		= { !"\u{1b}" ~ ANY }
-insertby		= { &insert ~ ANY ~ insertment }
 insert			= { "i" }
+insertstuff		= { &insert ~ ANY ~ (anything_but_escape)+ }
+insertend		= { &insert ~ ANY ~ (anything_but_escape)* ~ "\u{1b}" }
 jumpascii		= { "J" }
 helpfile		= { "?" }
 repeat			= { "." }
@@ -27,7 +27,8 @@ searchbytes		= { ( hex_digit{2} )* }
 hexsearch		= { "/" ~ searchbytes ~ "\n" }
 gg_line			= { ('0'..'9')* }
 gg			= { gg_line ~ "gg" }
-quickstuff		= _{ replaceby | replace | remove | dd | insertby | insert | jumpascii | helpfile | repeat | hexsearch | search | gg }
+quickstuffescaped	= _{ insertend | insertstuff | insert }
+quickstuff		= _{ replaceby | replace | remove | dd | jumpascii | helpfile | repeat | hexsearch | search | gg }
 
 saveandexit		= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
 exit			= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority
@@ -48,5 +49,5 @@ backspace		= { (!("\u{7f}") ~ ANY)* ~ "\u{7f}" }
 gatherone		= @{ !("\u{1b}" | "\n") ~ ANY }
 gatherall		= { gatherone* }
 
-cmd_list		= _{ ( movement | escape | quickstuff | backspace | cmd | gatherall ) }
+cmd_list		= _{ ( movement | quickstuffescaped | escape | quickstuff | backspace | cmd | gatherall ) }
 

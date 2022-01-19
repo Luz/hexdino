@@ -253,6 +253,41 @@ fn main() {
                     // debug.push_str("next chars will be inserted!");
                     clear = false;
                 }
+                Rule::insertstuff => {
+                    let key = command.chars().last().unwrap_or('x');
+
+                    if cursor.sel == CursorSelects::LeftNibble {
+                        // Left nibble
+                        if let Some(c) = key.to_digit(16) {
+                            buf.insert(cursor.pos, (c as u8) << 4);
+                            cursor.sel = CursorSelects::RightNibble;
+                        }
+                    } else if cursor.sel == CursorSelects::RightNibble {
+                        // Right nibble
+                        if cursor.pos == buf.len() {
+                            buf.insert(cursor.pos, 0);
+                        }
+                        if let Some(c) = key.to_digit(16) {
+                            buf[cursor.pos] = buf[cursor.pos] & 0xF0 | c as u8;
+                            cursor.sel = CursorSelects::LeftNibble;
+                            cursor.pos += 1;
+                        }
+                    } else if cursor.sel == CursorSelects::AsciiChar {
+                        buf.insert(cursor.pos, key as u8);
+                        cursor.pos += 1;
+                    }
+
+                    clear = false;
+                }
+                Rule::insertend => {
+                    // debug.push_str(&format!("Insert ended. ({:?})", command.clone()));
+                    lastcommand.clear();
+                    lastcommand.push_str(&format!(
+                        "Command repeation for {:?} not yet implemented.",
+                        cmd.as_rule()
+                    ));
+                    clear = true;
+                }
                 Rule::jumpascii => {
                     if cursor.sel == CursorSelects::AsciiChar {
                         cursor.sel = CursorSelects::LeftNibble;
@@ -334,39 +369,6 @@ fn main() {
                             }
                         }
                         lastcommand = command.clone();
-                    }
-                    Rule::insertment => {
-                        let key = inner_cmd.as_str().chars().nth(0).unwrap_or('x');
-                        lastcommand = command.clone();
-                        // debug.push_str(&format!("Inserted: {:?}", inner_cmd.as_str()));
-                        command.pop(); // remove the just inserted thing
-                        clear = false;
-
-                        if cursor.sel == CursorSelects::LeftNibble {
-                            // Left nibble
-                            if let Some(c) = key.to_digit(16) {
-                                buf.insert(cursor.pos, (c as u8) << 4);
-                                cursor.sel = CursorSelects::RightNibble;
-                            }
-                        } else if cursor.sel == CursorSelects::RightNibble {
-                            // Right nibble
-                            if cursor.pos == buf.len() {
-                                buf.insert(cursor.pos, 0);
-                            }
-                            if let Some(c) = key.to_digit(16) {
-                                buf[cursor.pos] = buf[cursor.pos] & 0xF0 | c as u8;
-                                cursor.sel = CursorSelects::LeftNibble;
-                                cursor.pos += 1;
-                            }
-                        } else if cursor.sel == CursorSelects::AsciiChar {
-                            buf.insert(cursor.pos, key as u8);
-                            cursor.pos += 1;
-                        }
-                        lastcommand.clear();
-                        lastcommand.push_str(&format!(
-                            "Command repeation for {:?} not yet implemented.",
-                            inner_cmd.as_rule()
-                        ));
                     }
                     Rule::searchstr => {
                         let search = inner_cmd.as_str().as_bytes();
