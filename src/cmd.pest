@@ -8,19 +8,19 @@ end			= { "$" }
 bottom			= { "G" }
 
 // Do not allow escape as replacement char
-replacement		= { !"\u{1b}" ~ any }
-replaceby		= { &replace ~ any ~ replacement }
+replacement		= { !"\u{1b}" ~ ANY }
+replaceby		= { &replace ~ ANY ~ replacement }
 replace			= { "r" }
 remove			= { "x" }
 dd_lines		= { ('0'..'9')* }
 dd			= { dd_lines ~ "dd" }
-insertment		= { !"\u{1b}" ~ any }
-insertby		= { &insert ~ any ~ insertment }
+insertment		= { !"\u{1b}" ~ ANY }
+insertby		= { &insert ~ ANY ~ insertment }
 insert			= { "i" }
 jumpascii		= { "J" }
 helpfile		= { "?" }
 repeat			= { "." }
-searchstr		= { (!("\u{1b}" | "\n") ~ any)* }
+searchstr		= { (!("\u{1b}" | "\n") ~ ANY)* }
 search			= { "/" ~ searchstr ~ "\n" }
 hex_digit		= @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
 searchbytes		= { ( hex_digit{2} )* }
@@ -35,12 +35,12 @@ save			= { (":" ~ ("write!" | "write" | "w!" | "w") ~ "\n") } // careful, notice
 cmd			= _{ ( saveandexit | exit | save ) }
 
 // consume any "not escapes" until first escape
-escape			= { (!("\u{1b}") ~ any)* ~ "\u{1b}" }
+escape			= { (!("\u{1b}") ~ ANY)* ~ "\u{1b}" }
 // consume any "not backspaces" until first backspace
-backspace		= { (!("\u{7f}") ~ any)* ~ "\u{7f}" }
+backspace		= { (!("\u{7f}") ~ ANY)* ~ "\u{7f}" }
 
 // Not escape and not Enter
-gatherone		= @{ !("\u{1b}" | "\n") ~ any }
+gatherone		= @{ !("\u{1b}" | "\n") ~ ANY }
 gatherall		= { gatherone* }
 
 cmd_list		= _{ ( movement | escape | quickstuff | backspace | cmd | gatherall ) }
