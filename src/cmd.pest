@@ -7,16 +7,15 @@ start			= { "0" }
 end			= { "$" }
 bottom			= { "G" }
 
-// Do not allow escape as replacement char
-replacement		= { !"\u{1b}" ~ ANY }
-replaceby		= { &replace ~ ANY ~ replacement }
 replace			= { "r" }
+replacement		= { &replace ~ ANY ~ (anything_but_escape) }
+replaceend		= { &replace ~ ANY ~ (anything_but_escape)* ~ escape_char }
 remove			= { "x" }
 dd_lines		= { ('0'..'9')* }
 dd			= { dd_lines ~ "dd" }
 insert			= { "i" }
 insertstuff		= { &insert ~ ANY ~ (anything_but_escape)+ }
-insertend		= { &insert ~ ANY ~ (anything_but_escape)* ~ "\u{1b}" }
+insertend		= { &insert ~ ANY ~ (anything_but_escape)* ~ escape_char }
 jumpascii		= { "J" }
 helpfile		= { "?" }
 repeat			= { "." }
@@ -27,8 +26,8 @@ searchbytes		= { ( hex_digit{2} )* }
 hexsearch		= { "/" ~ searchbytes ~ "\n" }
 gg_line			= { ('0'..'9')* }
 gg			= { gg_line ~ "gg" }
-quickstuffescaped	= _{ insertend | insertstuff | insert }
-quickstuff		= _{ replaceby | replace | remove | dd | jumpascii | helpfile | repeat | hexsearch | search | gg }
+quickstuffescaped	= _{ replaceend | replacement | replace | insertend | insertstuff | insert }
+quickstuff		= _{ remove | dd | jumpascii | helpfile | repeat | hexsearch | search | gg }
 
 saveandexit		= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
 exit			= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority

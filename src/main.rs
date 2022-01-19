@@ -234,8 +234,39 @@ fn main() {
                     cursor.pos -= cursor.pos % COLS; // jump to start of line
                 }
                 Rule::replace => {
-                    // debug.push_str("next char will be the replacement!");
                     clear = false;
+                }
+                Rule::replacement => {
+                    let key = command.chars().last().unwrap_or('x');
+                    if cursor.sel == CursorSelects::AsciiChar {
+                        if cursor.pos >= buf.len() {
+                            buf.insert(cursor.pos, 0);
+                        }
+                        buf[cursor.pos] = key as u8;
+                    } else {
+                        let mask = if cursor.sel == CursorSelects::LeftNibble {
+                            0x0F
+                        } else {
+                            0xF0
+                        };
+                        let shift = if cursor.sel == CursorSelects::LeftNibble {
+                            4
+                        } else {
+                            0
+                        };
+                        if cursor.pos >= buf.len() {
+                            buf.insert(cursor.pos, 0);
+                        }
+                        // Change the selected nibble
+                        if let Some(c) = key.to_digit(16) {
+                            buf[cursor.pos] = buf[cursor.pos] & mask | (c as u8) << shift;
+                        }
+                    }
+                    lastcommand = command.clone();
+                    clear = true;
+                }
+                Rule::replaceend => {
+                    clear = true;
                 }
                 Rule::remove => {
                     // check if in valid range
@@ -322,40 +353,6 @@ fn main() {
 
             for inner_cmd in cmd.into_inner() {
                 match inner_cmd.as_rule() {
-                    Rule::replacement => {
-                        let key = inner_cmd.as_str().chars().nth(0).unwrap_or('x');
-                        if cursor.sel == CursorSelects::AsciiChar {
-                            if cursor.pos >= buf.len() {
-                                buf.insert(cursor.pos, 0);
-                            }
-                            // buf[cursor.pos] = inner_cmd.as_str();
-                            buf[cursor.pos] = key as u8;
-                        } else {
-                            let mask = if cursor.sel == CursorSelects::LeftNibble {
-                                0x0F
-                            } else {
-                                0xF0
-                            };
-                            let shift = if cursor.sel == CursorSelects::LeftNibble {
-                                4
-                            } else {
-                                0
-                            };
-                            if cursor.pos >= buf.len() {
-                                buf.insert(cursor.pos, 0);
-                            }
-                            // Change the selected nibble
-                            if let Some(c) = key.to_digit(16) {
-                                buf[cursor.pos] = buf[cursor.pos] & mask | (c as u8) << shift;
-                            }
-                        }
-                        lastcommand.clear();
-                        lastcommand.push_str(&format!(
-                            "{}{}",
-                            command.chars().nth(0).unwrap_or('?'),
-                            key
-                        ));
-                    }
                     Rule::dd_lines => {
                         let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
                         // check if in valid range
