@@ -329,7 +329,8 @@ fn main() {
                     clear = false;
                 }
                 Rule::insertend => {
-                    // debug.push_str(&format!("Insert ended. ({:?})", command.clone()));
+                    // The reason this does not work is the escape character at the end
+                    // lastcommand = command.clone();
                     lastcommand.clear();
                     lastcommand.push_str(&format!(
                         "Command repeation for {:?} not yet implemented.",
