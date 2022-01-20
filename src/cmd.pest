@@ -18,9 +18,9 @@ insertend		= { &insert ~ ANY ~ (anything_but_escape)* ~ escape_char }
 jumpascii		= { "J" }
 helpfile		= { "?" }
 repeat			= { "." }
-searchstr		= { (!("\u{1b}" | "\n") ~ ANY)* }
+searchstr		= { (!(escape_char | "\n") ~ ANY)* }
 search			= { "/" ~ searchstr ~ "\n" }
-hex_digit		= @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
+hex_digit		= @{ ASCII_HEX_DIGIT | 'x'..'x' | 'X'..'X' }
 searchbytes		= { ( hex_digit{2} )* }
 hexsearch		= { "/" ~ searchbytes ~ "\n" }
 gg			= { ASCII_DIGIT* ~ &"gg" }
@@ -40,10 +40,11 @@ anything_but_escape	= _{ !(escape_char) ~ ANY }
 escape			= { (anything_but_escape)* ~ escape_char }
 
 // consume any "not backspaces" until first backspace
-backspace		= { (!("\u{7f}") ~ ANY)* ~ "\u{7f}" }
+backspace_char		= _{ "\u{7f}" }
+backspace		= { (!(backspace_char) ~ ANY)* ~ backspace_char }
 
 // Not escape and not Enter
-gatherone		= @{ !("\u{1b}" | "\n") ~ ANY }
+gatherone		= @{ !(escape_char | "\n") ~ ANY }
 gatherall		= { gatherone* }
 
 cmd_list		= _{ ( movement | quickstuffescaped | escape | quickstuff | backspace | cmd | gatherall ) }
