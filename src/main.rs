@@ -280,6 +280,21 @@ fn main() {
                     }
                     lastcommand = command.clone();
                 }
+                Rule::dd => {
+                    let amount: usize = cmd.as_str().parse().unwrap_or(1);
+                    // check if in valid range
+                    if buf.len() > 0 && cursor.pos < buf.len() {
+                        let startofline = cursor.pos - cursor.pos % COLS;
+                        let mut endofline = cursor.pos - (cursor.pos % COLS) + (COLS * amount);
+                        endofline = cmp::min(endofline, buf.len());
+                        buf.drain(startofline..endofline);
+                        if buf.len() > 0 && cursor.pos >= buf.len() {
+                            cursor.pos = buf.len() - 1;
+                        }
+                    }
+                    lastcommand = command.clone();
+                    clear = true;
+                }
                 Rule::insert => {
                     // debug.push_str("next chars will be inserted!");
                     clear = false;
@@ -353,20 +368,6 @@ fn main() {
 
             for inner_cmd in cmd.into_inner() {
                 match inner_cmd.as_rule() {
-                    Rule::dd_lines => {
-                        let amount: usize = inner_cmd.as_str().parse().unwrap_or(1);
-                        // check if in valid range
-                        if buf.len() > 0 && cursor.pos < buf.len() {
-                            let startofline = cursor.pos - cursor.pos % COLS;
-                            let mut endofline = cursor.pos - (cursor.pos % COLS) + (COLS * amount);
-                            endofline = cmp::min(endofline, buf.len());
-                            buf.drain(startofline..endofline);
-                            if buf.len() > 0 && cursor.pos >= buf.len() {
-                                cursor.pos = buf.len() - 1;
-                            }
-                        }
-                        lastcommand = command.clone();
-                    }
                     Rule::searchstr => {
                         let search = inner_cmd.as_str().as_bytes();
                         let foundpos = TwoWaySearcher::new(&search);
