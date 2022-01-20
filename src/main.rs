@@ -288,6 +288,9 @@ fn main() {
                         let mut endofline = cursor.pos - (cursor.pos % COLS) + (COLS * amount);
                         endofline = cmp::min(endofline, buf.len());
                         buf.drain(startofline..endofline);
+                        if buf.len() <= 0 {
+                            cursor.pos = 0; // Ensure cursor does not go below 0
+                        }
                         if buf.len() > 0 && cursor.pos >= buf.len() {
                             cursor.pos = buf.len() - 1;
                         }
@@ -372,7 +375,7 @@ fn main() {
                 }
                 Rule::exit => quitnow = true,
                 Rule::save => save = true,
-
+                Rule::escape => (),
                 _ => (),
             }
 
@@ -400,7 +403,6 @@ fn main() {
                         cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
                         // debug.push_str(&format!("Searching for: {:?}", needle ));
                     }
-                    Rule::escape => (),
                     Rule::gatherone => clear = false,
                     _ => {
                         command.push_str(&format!("no rule for {:?} ", inner_cmd.as_rule()));
