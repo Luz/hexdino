@@ -351,6 +351,16 @@ fn main() {
                     clear = false;
                     autoparse = true;
                 }
+                Rule::gg => {
+                    let linenr: usize = cmd.as_str().parse().unwrap_or(0);
+                    cursor.pos = linenr * COLS; // jump to the line
+                    if cursor.pos > buf.len() {
+                        // detect file end
+                        cursor.pos = buf.len();
+                    }
+                    cursor.pos -= cursor.pos % COLS; // jump to start of line
+                    clear = true;
+                }
                 Rule::backspace => {
                     command.pop();
                     command.pop();
@@ -389,15 +399,6 @@ fn main() {
                         }
                         cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
                         // debug.push_str(&format!("Searching for: {:?}", needle ));
-                    }
-                    Rule::gg_line => {
-                        let linenr: usize = inner_cmd.as_str().parse().unwrap_or(0);
-                        cursor.pos = linenr * COLS; // jump to the line
-                        if cursor.pos > buf.len() {
-                            // detect file end
-                            cursor.pos = buf.len();
-                        }
-                        cursor.pos -= cursor.pos % COLS; // jump to start of line
                     }
                     Rule::escape => (),
                     Rule::gatherone => clear = false,

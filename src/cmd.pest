@@ -23,8 +23,7 @@ search			= { "/" ~ searchstr ~ "\n" }
 hex_digit		= @{ '0'..'9' | 'a'..'f' | 'A'..'F' | 'x'..'x' | 'X'..'X' }
 searchbytes		= { ( hex_digit{2} )* }
 hexsearch		= { "/" ~ searchbytes ~ "\n" }
-gg_line			= { ('0'..'9')* }
-gg			= { gg_line ~ "gg" }
+gg			= { ASCII_DIGIT* ~ &"gg" }
 quickstuffescaped	= _{ replaceend | replacement | replace | insertend | insertstuff | insert }
 quickstuff		= _{ remove | dd | jumpascii | helpfile | repeat | hexsearch | search | gg }
 
