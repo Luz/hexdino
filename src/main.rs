@@ -62,6 +62,7 @@ fn main() {
     const COLS: usize = 16;
     let mut command = String::new();
     let mut lastcommand = String::new();
+    let mut autoparse = String::new();
     let mut debug = String::new();
 
     // start ncursesw
@@ -145,13 +146,14 @@ fn main() {
     );
 
     let mut quitnow = false;
-    let mut autoparse = false;
     while quitnow == false {
-        if !autoparse {
+        if autoparse.is_empty() {
             let key = std::char::from_u32(getch() as u32).unwrap();
             command.push_str(&key.clone().to_string());
+        } else {
+            command.push(autoparse.chars().nth(0).unwrap());
+            autoparse.remove(0);
         }
-        autoparse = false;
 
         let parsethisstring = command.clone();
         let commands = IdentParser::parse(Rule::cmd_list, &parsethisstring)
@@ -329,13 +331,7 @@ fn main() {
                     clear = false;
                 }
                 Rule::insertend => {
-                    // The reason this does not work is the escape character at the end
-                    // lastcommand = command.clone();
-                    lastcommand.clear();
-                    lastcommand.push_str(&format!(
-                        "Command repeation for {:?} not yet implemented.",
-                        cmd.as_rule()
-                    ));
+                    lastcommand = command.clone();
                     clear = true;
                 }
                 Rule::jumpascii => {
@@ -351,9 +347,7 @@ fn main() {
                     clear = false;
                 }
                 Rule::repeat => {
-                    command = lastcommand.clone();
-                    clear = false;
-                    autoparse = true;
+                    autoparse = lastcommand.clone();
                 }
                 Rule::gg => {
                     let linenr: usize = cmd.as_str().parse().unwrap_or(0);
