@@ -63,7 +63,7 @@ fn main() {
     let mut command = String::new();
     let mut lastcommand = String::new();
     let mut autoparse = String::new();
-    let mut debug = String::new();
+    let mut infoline = String::new();
 
     // start ncursesw
     initscr();
@@ -140,7 +140,7 @@ fn main() {
         &buf[draw_range.0..draw_range.1],
         COLS,
         &command,
-        &mut debug,
+        &mut infoline,
         cursor,
         screenoffset,
     );
@@ -164,7 +164,6 @@ fn main() {
         for cmd in commands {
             match cmd.as_rule() {
                 Rule::down => {
-                    // debug.push_str(&format!("{:?}", cmd.as_rule()));
                     if cursor.pos + COLS < buf.len() {
                         // not at end
                         cursor.pos += COLS;
@@ -301,7 +300,7 @@ fn main() {
                     clear = true;
                 }
                 Rule::insert => {
-                    // debug.push_str("next chars will be inserted!");
+                    // The next chars will be inserted
                     clear = false;
                 }
                 Rule::insertstuff => {
@@ -396,7 +395,7 @@ fn main() {
                             needle.push(nibble);
                         }
                         cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
-                        // debug.push_str(&format!("Searching for: {:?}", needle ));
+                        // infoline.push_str(&format!("Searching for: {:?}", needle ));
                     }
                     Rule::gatherone => clear = false,
                     _ => {
@@ -452,7 +451,7 @@ fn main() {
             &buf[draw_range.0..draw_range.1],
             COLS,
             &command,
-            &mut debug,
+            &mut infoline,
             cursor,
             screenoffset,
         );

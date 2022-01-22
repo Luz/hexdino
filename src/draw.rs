@@ -8,29 +8,20 @@ pub fn draw(
     buf: &[u8],
     cols: usize,
     command: &String,
-    debug: &mut String,
+    infoline: &mut String,
     cursor: CursorState,
     screenoffset: usize,
 ) {
     erase();
 
-    //    debug.clear();
-    //    let screensize = get_screen_size(cols);
-    //    debug.push_str(&format!("   screensize:{:?}", screensize));
-    //    debug.push_str(&format!("   screenoffset:{:?}", screenoffset));
-    //    debug.push_str(&format!("   buf.len():{:?}", buf.len()));
-
     let screenheight: usize;
     screenheight = getmaxy(stdscr()) as usize;
-    //    debug.push_str(&format!("   screenheight:{:?}", screenheight));
 
     let mut tmpbuflen = buf.len();
     if tmpbuflen >= 1 {
         tmpbuflen -= 1;
     }
     let rows = tmpbuflen / cols + 1;
-
-    //    debug.push_str(&format!("   rows:{:?}", rows));
 
     for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=COLS)
@@ -92,7 +83,7 @@ pub fn draw(
         addstr("\n");
     }
     addstr(&format!("{}", command));
-    addstr(&format!("{}", debug));
+    addstr(&format!("{}", infoline));
 }
 
 fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
