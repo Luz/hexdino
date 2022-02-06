@@ -233,7 +233,9 @@ fn main() {
                     }
                 }
                 Rule::bottom => {
-                    cursor.pos = buf.len() - 1;
+                    if buf.len() >= 1 {
+                        cursor.pos = buf.len() - 1;
+                    }
                     cursor.pos -= cursor.pos % COLS; // jump to start of line
                 }
                 Rule::replace => {
