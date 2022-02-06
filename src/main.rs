@@ -224,7 +224,9 @@ fn main() {
                         cursor.pos = cursor.pos - (cursor.pos % COLS) + (COLS - 1);
                     } else {
                         // jump to end of line
-                        cursor.pos = buf.len() - 1
+                        if cursor.pos >= 1 { // Ensure no underflow
+                            cursor.pos = buf.len() - 1
+                        }
                     }
                     if cursor.sel == CursorSelects::LeftNibble {
                         cursor.sel = CursorSelects::RightNibble;
