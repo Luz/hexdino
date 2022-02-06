@@ -280,8 +280,7 @@ fn main() {
                 }
                 Rule::dd => {
                     let amount: usize = cmd.as_str().parse().unwrap_or(1);
-                    // check if in valid range
-                    if buf.len() > 0 && cursor.pos < buf.len() {
+                    if cursor.pos < buf.len() {
                         let startofline = cursor.pos - cursor.pos % COLS;
                         let mut endofline = cursor.pos - (cursor.pos % COLS) + (COLS * amount);
                         endofline = cmp::min(endofline, buf.len());
