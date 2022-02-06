@@ -169,10 +169,7 @@ fn main() {
                         cursor.pos += COLS;
                     } else {
                         // when at end
-                        if buf.len() != 0 {
-                            // Suppress underflow
-                            cursor.pos = buf.len() - 1;
-                        }
+                        cursor.pos = buf.len().saturating_sub(1);
                     }
                 }
                 Rule::up => {
@@ -224,18 +221,14 @@ fn main() {
                         cursor.pos = cursor.pos - (cursor.pos % COLS) + (COLS - 1);
                     } else {
                         // jump to end of line
-                        if cursor.pos >= 1 { // Ensure no underflow
-                            cursor.pos = buf.len() - 1
-                        }
+                        cursor.pos = buf.len().saturating_sub(1);
                     }
                     if cursor.sel == CursorSelects::LeftNibble {
                         cursor.sel = CursorSelects::RightNibble;
                     }
                 }
                 Rule::bottom => {
-                    if buf.len() >= 1 {
-                        cursor.pos = buf.len() - 1;
-                    }
+                    cursor.pos = buf.len().saturating_sub(1);
                     cursor.pos -= cursor.pos % COLS; // jump to start of line
                 }
                 Rule::replace => {
@@ -279,9 +272,9 @@ fn main() {
                         // remove the current char
                         buf.remove(cursor.pos);
                     }
-                    // always perform the movement if possible
-                    if cursor.pos > 0 && cursor.pos >= buf.len() {
-                        cursor.pos -= 1;
+                    // Move left if cursor is currently out of data
+                    if cursor.pos >= buf.len() {
+                        cursor.pos = cursor.pos.saturating_sub(1);
                     }
                     lastcommand = command.clone();
                 }
@@ -293,11 +286,8 @@ fn main() {
                         let mut endofline = cursor.pos - (cursor.pos % COLS) + (COLS * amount);
                         endofline = cmp::min(endofline, buf.len());
                         buf.drain(startofline..endofline);
-                        if buf.len() <= 0 {
-                            cursor.pos = 0; // Ensure cursor does not go below 0
-                        }
-                        if buf.len() > 0 && cursor.pos >= buf.len() {
-                            cursor.pos = buf.len() - 1;
+                        if cursor.pos >= buf.len() {
+                            cursor.pos = buf.len().saturating_sub(1);
                         }
                     }
                     lastcommand = command.clone();
