@@ -29,6 +29,9 @@ Then build with cargo
 nix-shell . --command "cargo build"
 ```
 
+## Installation
+[![Packaging status](https://repology.org/badge/vertical-allrepos/hexdino.svg)](https://repology.org/project/hexdino/versions)
+
 ## Logo
 ![logo](https://raw.githubusercontent.com/Luz/hexdino/master/logo.png)
 
