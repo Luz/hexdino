@@ -50,8 +50,12 @@ pub struct CursorState {
     sel: CursorSelects,
 }
 
+fn print_usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} FILENAME [options]", program);
+    print!("{}", opts.usage(&brief));
+}
+
 fn main() {
-    const VERSION: &str = env!("CARGO_PKG_VERSION");
     let mut buf = vec![];
     let mut cursor = CursorState {
         pos: 0,
@@ -75,48 +79,49 @@ fn main() {
     use_default_colors();
     init_pair(1, COLOR_GREEN, -1);
 
-    let args: Vec<_> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help menu");
     opts.optflag("v", "version", "print the version");
-    let matches = match opts.parse(&args[1..]) {
+    let arg_matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
             endwin();
             println!("{}", f.to_string());
-            println!("Usage: {} FILE [options]", program);
+            print_usage(&program, opts);
             return;
         }
     };
-    if matches.opt_present("v") {
+    if arg_matches.opt_present("h") {
         endwin();
-        println!("Version: {}", VERSION);
+        print_usage(&program, opts);
         return;
     }
-    if matches.opt_present("h") {
+    if arg_matches.opt_present("v") {
         endwin();
-        println!("Usage: {} FILE [options]", program);
+        println!("Name: {}", env!("CARGO_PKG_NAME"));
+        println!("Version: {}", env!("CARGO_PKG_VERSION"));
+        println!("Repository: {}", env!("CARGO_PKG_REPOSITORY"));
         return;
     }
-
     if !has_colors() {
         endwin();
         println!("Your terminal does not support color!\n");
         return;
     }
 
-    let patharg = match matches.free.is_empty() {
+    let arg_filename = match arg_matches.free.is_empty() {
         true => String::new(),
-        false => matches.free[0].clone(),
+        false => arg_matches.free[0].clone(),
     };
-    let path = Path::new(&patharg);
-
-    if patharg.is_empty() {
+    if arg_filename.is_empty() {
         endwin();
-        println!("Patharg is empty!\n");
+        println!("FILENAME is empty!\n");
+        print_usage(&program, opts);
         return;
     }
+    let path = Path::new(&arg_filename);
 
     let mut file = match OpenOptions::new()
         .read(true)
