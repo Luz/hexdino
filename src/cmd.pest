@@ -22,12 +22,13 @@ gg			= { ASCII_DIGIT* ~ &"gg" }
 
 quickstuffescaped	= _{ replaceend | replacement | replace | insertend | insertstuff | insert | remove | dd | jumpascii | helpfile | repeat | gg }
 
+search			= { "/" }
 searchstr		= { (!(escape_char | "\n") ~ ANY)* }
-search			= { "/" ~ searchstr ~ "\n" }
+searchend		= { &search ~ ANY ~ searchstr ~ "\n" }
 hex_digit		= @{ ASCII_HEX_DIGIT | 'x'..'x' | 'X'..'X' }
 searchbytes		= { ( hex_digit{2} )* }
-hexsearch		= { "/" ~ searchbytes ~ "\n" }
-quickstuff		= _{ hexsearch | search }
+hexsearchend		= { &search ~ ANY ~ searchbytes ~ "\n" }
+quickstuff		= _{ hexsearchend | searchend }
 
 saveandexit		= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
 exit			= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority
