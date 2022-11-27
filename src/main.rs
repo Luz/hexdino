@@ -4,7 +4,6 @@
 
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 #![deny(trivial_casts)]
-#![allow(unused_variable)]
 
 use std::cmp;
 use std::env;
@@ -80,8 +79,6 @@ fn main() -> Result<()> {
     let mut lastcommand = String::new();
     let mut autoparse = String::new();
     let mut infoline = String::new();
-
-    std::thread::sleep(std::time::Duration::from_secs(5));
 
     let mut out = stdout();
     let screensize = crossterm::terminal::size()?;

@@ -24,6 +24,7 @@ pub fn draw(
 ) -> Result<()> {
     let mut out = stdout();
     queue!(out, terminal::Clear(terminal::ClearType::All))?;
+    queue!(out, cursor::MoveTo(0, 0))?;
 
     let screensize = crossterm::terminal::size()?;
     let screenheight: usize = screensize.1 as usize;
@@ -36,65 +37,66 @@ pub fn draw(
 
     for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=COLS)
-        /*        addstr(&format!(
-            "{:08X}: ",
-            get_absolute_line(cols, screenoffset, z)
-        ));*/
+        let address: String = format!("{:08X}: ", get_absolute_line(cols, screenoffset, z));
+        queue!(out, Print(address))?;
         // Additional space between line number and hex
-        //        addstr(" ");
+        queue!(out, Print(" "))?;
         for s in 0..cols {
             let pos: usize = z * cols + s;
             if pos < buf.len() {
                 color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                //                addstr(&format!("{:01X}", buf[pos] >> 4));
+                let left_nibble: String = format!("{:01X}", buf[pos] >> 4);
+                queue!(out, Print(left_nibble))?;
                 color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
                 color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                //                addstr(&format!("{:01X}", buf[pos] & 0x0F));
+                let right_nibble: String = format!("{:01X}", buf[pos] & 0x0F);
+                queue!(out, Print(right_nibble))?;
                 color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
-            //                addstr(" ");
+                queue!(out, Print(" "))?;
             } else if pos == buf.len() {
                 color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                //                addstr("-");
+                queue!(out, Print("-"))?;
                 color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
                 color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                //                addstr("-");
+                queue!(out, Print("-"))?;
                 color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
-            //                addstr(" ");
+                queue!(out, Print(" "))?;
             } else {
-                //                addstr("-- ");
+                queue!(out, Print("-- "))?;
             }
         }
         // Additional space between hex and ascii
-        //        addstr(" ");
+        queue!(out, Print(" "))?;
         for s in 0..cols {
             let pos: usize = z * cols + s;
             color_ascii_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
             if pos < buf.len() {
                 if let c @ 32..=126 = buf[pos] {
-                    //                    addstr(&format!("{}", c as char));
+                    let ascii_symbol: String = format!("{}", c as char);
+                    queue!(out, Print(ascii_symbol))?;
                 } else {
                     // Mark non-ascii symbols
-                    //                    addstr(&format!("."));
+                    queue!(out, Print("."))?;
                 }
             } else if pos == buf.len() {
                 // Pad ascii with spaces
-                //                addstr(" ");
+                queue!(out, Print(" "))?;
             }
 
             color_ascii_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
         }
-        //        addstr("\n");
+        queue!(out, Print("\n\r"))?;
     }
     for _ in 1..screenheight - rows {
         // Put the cursor on last line of terminal
-        //        addstr("\n");
+        queue!(out, Print("\n"))?;
     }
-    //    addstr(&format!("{}", command));
-    //    addstr(&format!("{}", infoline));
+    queue!(out, Print(command))?;
+    queue!(out, Print(infoline))?;
     out.flush()?;
     Ok(())
 }
