@@ -1,5 +1,15 @@
-extern crate ncurses;
-use ncurses::*;
+#![allow(unused_imports)]
+extern crate crossterm;
+use crossterm::{
+    cursor, queue,
+    style::Print,
+    terminal,
+    terminal::{disable_raw_mode, enable_raw_mode},
+    Result,
+};
+use std::io::prelude::*;
+use std::io::stdout;
+
 use std::cmp;
 use CursorSelects;
 use CursorState;
@@ -11,11 +21,12 @@ pub fn draw(
     infoline: &mut String,
     cursor: CursorState,
     screenoffset: usize,
-) {
-    erase();
+) -> Result<()> {
+    let mut out = stdout();
+    queue!(out, terminal::Clear(terminal::ClearType::All))?;
 
-    let screenheight: usize;
-    screenheight = getmaxy(stdscr()) as usize;
+    let screensize = crossterm::terminal::size()?;
+    let screenheight: usize = screensize.1 as usize;
 
     let mut tmpbuflen = buf.len();
     if tmpbuflen >= 1 {
@@ -25,73 +36,75 @@ pub fn draw(
 
     for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=COLS)
-        addstr(&format!(
+        /*        addstr(&format!(
             "{:08X}: ",
             get_absolute_line(cols, screenoffset, z)
-        ));
+        ));*/
         // Additional space between line number and hex
-        addstr(" ");
+        //        addstr(" ");
         for s in 0..cols {
             let pos: usize = z * cols + s;
             if pos < buf.len() {
                 color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr(&format!("{:01X}", buf[pos] >> 4));
+                //                addstr(&format!("{:01X}", buf[pos] >> 4));
                 color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
                 color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr(&format!("{:01X}", buf[pos] & 0x0F));
+                //                addstr(&format!("{:01X}", buf[pos] & 0x0F));
                 color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
-                addstr(" ");
+            //                addstr(" ");
             } else if pos == buf.len() {
                 color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr("-");
+                //                addstr("-");
                 color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
                 color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr("-");
+                //                addstr("-");
                 color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
 
-                addstr(" ");
+            //                addstr(" ");
             } else {
-                addstr("-- ");
+                //                addstr("-- ");
             }
         }
         // Additional space between hex and ascii
-        addstr(" ");
+        //        addstr(" ");
         for s in 0..cols {
             let pos: usize = z * cols + s;
             color_ascii_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
             if pos < buf.len() {
                 if let c @ 32..=126 = buf[pos] {
-                    addstr(&format!("{}", c as char));
+                    //                    addstr(&format!("{}", c as char));
                 } else {
                     // Mark non-ascii symbols
-                    addstr(&format!("."));
+                    //                    addstr(&format!("."));
                 }
             } else if pos == buf.len() {
                 // Pad ascii with spaces
-                addstr(" ");
+                //                addstr(" ");
             }
 
             color_ascii_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
         }
-        addstr("\n");
+        //        addstr("\n");
     }
     for _ in 1..screenheight - rows {
         // Put the cursor on last line of terminal
-        addstr("\n");
+        //        addstr("\n");
     }
-    addstr(&format!("{}", command));
-    addstr(&format!("{}", infoline));
+    //    addstr(&format!("{}", command));
+    //    addstr(&format!("{}", infoline));
+    out.flush()?;
+    Ok(())
 }
 
 fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
     return z * cols + screenoffset * cols;
 }
 pub fn get_screen_size(cols: usize) -> usize {
-    let screenheight: usize;
-    screenheight = getmaxy(stdscr()) as usize;
+    let screensize = crossterm::terminal::size().unwrap_or_default();
+    let screenheight: usize = screensize.1 as usize;
 
     let mut ret: usize = 0;
 
@@ -120,15 +133,15 @@ pub fn get_absolute_draw_indices(
 fn color_left_nibble(color: bool, cursor: CursorState) {
     if color {
         if cursor.sel == CursorSelects::LeftNibble {
-            attron(COLOR_PAIR(1) | A_STANDOUT());
+            //            attron(COLOR_PAIR(1) | A_STANDOUT());
         } else if cursor.sel == CursorSelects::AsciiChar {
-            attron(A_UNDERLINE());
+            //            attron(A_UNDERLINE());
         }
     } else {
         if cursor.sel == CursorSelects::LeftNibble {
-            attroff(COLOR_PAIR(1) | A_STANDOUT());
+            //            attroff(COLOR_PAIR(1) | A_STANDOUT());
         } else if cursor.sel == CursorSelects::AsciiChar {
-            attroff(A_UNDERLINE());
+            //            attroff(A_UNDERLINE());
         }
     }
 }
@@ -141,15 +154,15 @@ fn color_left_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
 fn color_right_nibble(color: bool, cursor: CursorState) {
     if color {
         if cursor.sel == CursorSelects::RightNibble {
-            attron(COLOR_PAIR(1) | A_STANDOUT());
+            //            attron(COLOR_PAIR(1) | A_STANDOUT());
         } else if cursor.sel == CursorSelects::AsciiChar {
-            attron(A_UNDERLINE());
+            //            attron(A_UNDERLINE());
         }
     } else {
         if cursor.sel == CursorSelects::RightNibble {
-            attroff(COLOR_PAIR(1) | A_STANDOUT());
+            //            attroff(COLOR_PAIR(1) | A_STANDOUT());
         } else if cursor.sel == CursorSelects::AsciiChar {
-            attroff(A_UNDERLINE());
+            //            attroff(A_UNDERLINE());
         }
     }
 }
@@ -162,15 +175,15 @@ fn color_right_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
 fn color_ascii(color: bool, cursor: CursorState) {
     if color {
         if cursor.sel == CursorSelects::AsciiChar {
-            attron(COLOR_PAIR(1) | A_STANDOUT());
+            //            attron(COLOR_PAIR(1) | A_STANDOUT());
         } else {
-            attron(A_UNDERLINE());
+            //            attron(A_UNDERLINE());
         }
     } else {
         if cursor.sel == CursorSelects::AsciiChar {
-            attroff(COLOR_PAIR(1) | A_STANDOUT());
+            //            attroff(COLOR_PAIR(1) | A_STANDOUT());
         } else {
-            attroff(A_UNDERLINE());
+            //            attroff(A_UNDERLINE());
         }
     }
 }
