@@ -2,7 +2,7 @@
 extern crate crossterm;
 use crossterm::{
     cursor, queue,
-    style::Print,
+    style::{Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor, Stylize},
     terminal,
     terminal::{disable_raw_mode, enable_raw_mode},
     Result,
@@ -44,25 +44,33 @@ pub fn draw(
         for s in 0..cols {
             let pos: usize = z * cols + s;
             if pos < buf.len() {
-                color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_left_nibble(cursor);
+                }
                 let left_nibble: String = format!("{:01X}", buf[pos] >> 4);
                 queue!(out, Print(left_nibble))?;
-                color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                queue!(out, ResetColor)?;
 
-                color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_right_nibble(cursor);
+                }
                 let right_nibble: String = format!("{:01X}", buf[pos] & 0x0F);
                 queue!(out, Print(right_nibble))?;
-                color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                queue!(out, ResetColor)?;
 
                 queue!(out, Print(" "))?;
             } else if pos == buf.len() {
-                color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_left_nibble(cursor);
+                }
                 queue!(out, Print("-"))?;
-                color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                queue!(out, ResetColor)?;
 
-                color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_right_nibble(cursor);
+                }
                 queue!(out, Print("-"))?;
-                color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                queue!(out, ResetColor)?;
 
                 queue!(out, Print(" "))?;
             } else {
@@ -73,7 +81,7 @@ pub fn draw(
         queue!(out, Print(" "))?;
         for s in 0..cols {
             let pos: usize = z * cols + s;
-            color_ascii_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
+            color_ascii(pos + cols * screenoffset == cursor.pos, cursor);
             if pos < buf.len() {
                 if let c @ 32..=126 = buf[pos] {
                     let ascii_symbol: String = format!("{}", c as char);
@@ -86,8 +94,7 @@ pub fn draw(
                 // Pad ascii with spaces
                 queue!(out, Print(" "))?;
             }
-
-            color_ascii_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+            queue!(out, ResetColor)?;
         }
         queue!(out, Print("\n\r"))?;
     }
@@ -132,65 +139,40 @@ pub fn get_absolute_draw_indices(
     return (starting_pos, ending_pos);
 }
 
-fn color_left_nibble(color: bool, cursor: CursorState) {
-    if color {
-        if cursor.sel == CursorSelects::LeftNibble {
-            //            attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            //            attron(A_UNDERLINE());
-        }
-    } else {
-        if cursor.sel == CursorSelects::LeftNibble {
-            //            attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            //            attroff(A_UNDERLINE());
-        }
-    }
-}
-fn color_left_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
-    if condition {
-        color_left_nibble(color, cursor);
+fn color_left_nibble(cursor: CursorState) {
+    if cursor.sel == CursorSelects::LeftNibble {
+        color_cursor();
+    } else if cursor.sel == CursorSelects::AsciiChar {
+        underline();
     }
 }
 
-fn color_right_nibble(color: bool, cursor: CursorState) {
-    if color {
-        if cursor.sel == CursorSelects::RightNibble {
-            //            attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            //            attron(A_UNDERLINE());
-        }
-    } else {
-        if cursor.sel == CursorSelects::RightNibble {
-            //            attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            //            attroff(A_UNDERLINE());
-        }
-    }
-}
-fn color_right_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
-    if condition {
-        color_right_nibble(color, cursor);
+fn color_right_nibble(cursor: CursorState) {
+    if cursor.sel == CursorSelects::RightNibble {
+        color_cursor();
+    } else if cursor.sel == CursorSelects::AsciiChar {
+        underline();
     }
 }
 
-fn color_ascii(color: bool, cursor: CursorState) {
-    if color {
+fn color_ascii(condition: bool, cursor: CursorState) {
+    if condition {
         if cursor.sel == CursorSelects::AsciiChar {
-            //            attron(COLOR_PAIR(1) | A_STANDOUT());
+            color_cursor();
         } else {
-            //            attron(A_UNDERLINE());
-        }
-    } else {
-        if cursor.sel == CursorSelects::AsciiChar {
-            //            attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else {
-            //            attroff(A_UNDERLINE());
+            underline();
         }
     }
 }
-fn color_ascii_cond(color: bool, condition: bool, cursor: CursorState) {
-    if condition {
-        color_ascii(color, cursor);
-    }
+// This is the actual cursor
+fn color_cursor() {
+    queue!(
+        stdout(),
+        SetBackgroundColor(Color::Green),
+        SetForegroundColor(Color::Black)
+    )
+    .unwrap_or(());
+}
+fn underline() {
+    queue!(stdout(), SetAttribute(Attribute::Underlined)).unwrap_or(());
 }
