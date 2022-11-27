@@ -356,6 +356,31 @@ fn main() {
                     cursor.pos -= cursor.pos % COLS; // jump to start of line
                     clear = true;
                 }
+                Rule::searchend => {
+                    let searchstr = cmd.clone().into_inner().as_str();
+                    let search = searchstr.as_bytes();
+                    let foundpos = TwoWaySearcher::new(&search);
+                    cursor.pos = foundpos.search_in(&buf).unwrap_or(cursor.pos);
+                    clear = true;
+                }
+                Rule::hexsearchend => {
+                    let searchbytes = cmd.clone().into_inner().as_str();
+                    let search = searchbytes.as_bytes();
+                    let mut needle = vec![];
+                    for i in 0..search.len() {
+                        let nibble = match search[i] as u8 {
+                            c @ 48..=57 => c - 48, // Numbers from 0 to 9
+                            b'x' => 0x10,          // x is the wildcard
+                            b'X' => 0x10,          // X is the wildcard
+                            c @ b'a'..=b'f' => c - 87,
+                            c @ b'A'..=b'F' => c - 55,
+                            _ => panic!("Should not get to this position!"),
+                        };
+                        needle.push(nibble);
+                    }
+                    cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
+                    // infoline.push_str(&format!("Searching for: {:?}", needle ));
+                }
                 Rule::backspace => {
                     command.pop();
                     command.pop();
@@ -373,37 +398,6 @@ fn main() {
                     clear = false;
                 }
                 _ => (),
-            }
-
-            for inner_cmd in cmd.into_inner() {
-                match inner_cmd.as_rule() {
-                    Rule::searchstr => {
-                        let search = inner_cmd.as_str().as_bytes();
-                        let foundpos = TwoWaySearcher::new(&search);
-                        cursor.pos = foundpos.search_in(&buf).unwrap_or(cursor.pos);
-                    }
-                    Rule::searchbytes => {
-                        let search = inner_cmd.as_str().as_bytes();
-                        let mut needle = vec![];
-                        for i in 0..search.len() {
-                            let nibble = match search[i] as u8 {
-                                c @ 48..=57 => c - 48, // Numbers from 0 to 9
-                                b'x' => 0x10,          // x is the wildcard
-                                b'X' => 0x10,          // X is the wildcard
-                                c @ b'a'..=b'f' => c - 87,
-                                c @ b'A'..=b'F' => c - 55,
-                                _ => panic!("Should not get to this position!"),
-                            };
-                            needle.push(nibble);
-                        }
-                        cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
-                        // infoline.push_str(&format!("Searching for: {:?}", needle ));
-                    }
-                    _ => {
-                        command.push_str(&format!("no rule for {:?} ", inner_cmd.as_rule()));
-                        clear = false;
-                    }
-                };
             }
             if save {
                 if path.exists() {
