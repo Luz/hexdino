@@ -368,6 +368,10 @@ fn main() {
                 Rule::exit => quitnow = true,
                 Rule::save => save = true,
                 Rule::escape => (),
+                Rule::gatherall => {
+                    // When the command is still to be fully built
+                    clear = false;
+                }
                 _ => (),
             }
 
@@ -395,7 +399,6 @@ fn main() {
                         cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
                         // infoline.push_str(&format!("Searching for: {:?}", needle ));
                     }
-                    Rule::gatherone => clear = false,
                     _ => {
                         command.push_str(&format!("no rule for {:?} ", inner_cmd.as_rule()));
                         clear = false;
