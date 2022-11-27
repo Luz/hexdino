@@ -23,16 +23,16 @@ gg			= { ASCII_DIGIT* ~ &"gg" }
 quickstuffescaped	= _{ replaceend | replacement | replace | insertend | insertstuff | insert | remove | dd | jumpascii | helpfile | repeat | gg }
 
 search			= { "/" }
-searchstr		= { (!(escape_char | "\n") ~ ANY)* }
-searchend		= { &search ~ ANY ~ searchstr ~ "\n" }
+searchstr		= { (!(escape_char | NEWLINE) ~ ANY)* }
+searchend		= { &search ~ ANY ~ searchstr ~ NEWLINE }
 hex_digit		= @{ ASCII_HEX_DIGIT | 'x'..'x' | 'X'..'X' }
 searchbytes		= { ( hex_digit{2} )* }
-hexsearchend		= { &search ~ ANY ~ searchbytes ~ "\n" }
+hexsearchend		= { &search ~ ANY ~ searchbytes ~ NEWLINE }
 quickstuff		= _{ hexsearchend | searchend }
 
-saveandexit		= { (":" ~ ("wq!" | "wq") ~ "\n") | "ZZ" } // careful, notice priority
-exit			= { (":" ~ ("q!" | "q") ~ "\n") | "ZQ" } // careful, notice priority
-save			= { (":" ~ ("write!" | "write" | "w!" | "w") ~ "\n") } // careful, notice priority
+saveandexit		= { (":" ~ ("wq!" | "wq") ~ NEWLINE) | "ZZ" } // careful, notice priority
+exit			= { (":" ~ ("q!" | "q") ~ NEWLINE) | "ZQ" } // careful, notice priority
+save			= { (":" ~ ("write!" | "write" | "w!" | "w") ~ NEWLINE) } // careful, notice priority
 cmd			= _{ ( saveandexit | exit | save ) }
 
 // Escape character definition:
@@ -47,7 +47,7 @@ backspace_char		= _{ "\u{7f}" }
 backspace		= { (!(backspace_char) ~ ANY)* ~ backspace_char }
 
 // Not escape and not Enter
-gatherone		= _{ !(escape_char | "\n") ~ ANY }
+gatherone		= _{ !(escape_char | NEWLINE) ~ ANY }
 gatherall		= { gatherone* }
 
 cmd_list		= _{ ( movement | quickstuffescaped | escape | quickstuff | backspace | cmd | gatherall ) }
