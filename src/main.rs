@@ -9,6 +9,7 @@ use std::cmp;
 use std::env;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
+use std::io::stdout;
 use std::io::SeekFrom;
 use std::path::Path;
 
@@ -18,8 +19,18 @@ use draw::get_absolute_draw_indices;
 mod find;
 use find::FindOptSubset;
 
-extern crate ncurses;
-use ncurses::*;
+extern crate crossterm;
+use crossterm::event::{read, Event};
+use crossterm::{
+    cursor, queue,
+    style::Print,
+    terminal,
+    terminal::{disable_raw_mode, enable_raw_mode},
+    Result,
+};
+
+mod keycodes;
+use keycodes::extract;
 
 extern crate getopts;
 use getopts::Options;
@@ -55,7 +66,7 @@ fn print_usage(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-fn main() {
+fn main() -> Result<()> {
     let mut buf = vec![];
     let mut cursor = CursorState {
         pos: 0,
@@ -69,15 +80,9 @@ fn main() {
     let mut autoparse = String::new();
     let mut infoline = String::new();
 
-    // start ncursesw
-    initscr();
-    let screenheight = getmaxy(stdscr()) as usize;
-    // ctrl+z and fg works with this
-    cbreak();
-    noecho();
-    start_color();
-    use_default_colors();
-    init_pair(1, COLOR_GREEN, -1);
+    let mut out = stdout();
+    let screensize = crossterm::terminal::size()?;
+    let screenheight: usize = screensize.1 as usize;
 
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
@@ -87,28 +92,20 @@ fn main() {
     let arg_matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            endwin();
             println!("{}", f.to_string());
             print_usage(&program, opts);
-            return;
+            std::process::exit(-1);
         }
     };
     if arg_matches.opt_present("h") {
-        endwin();
         print_usage(&program, opts);
-        return;
+        std::process::exit(0);
     }
     if arg_matches.opt_present("v") {
-        endwin();
         println!("Name: {}", env!("CARGO_PKG_NAME"));
         println!("Version: {}", env!("CARGO_PKG_VERSION"));
         println!("Repository: {}", env!("CARGO_PKG_REPOSITORY"));
-        return;
-    }
-    if !has_colors() {
-        endwin();
-        println!("Your terminal does not support color!\n");
-        return;
+        std::process::exit(0);
     }
 
     let arg_filename = match arg_matches.free.is_empty() {
@@ -116,10 +113,9 @@ fn main() {
         false => arg_matches.free[0].clone(),
     };
     if arg_filename.is_empty() {
-        endwin();
         println!("FILENAME is empty!\n");
         print_usage(&program, opts);
-        return;
+        std::process::exit(-1);
     }
     let path = Path::new(&arg_filename);
 
@@ -130,15 +126,23 @@ fn main() {
         .open(&path)
     {
         Err(why) => {
-            endwin();
             println!("Could not open {}: {}", path.display(), why.to_string());
-            return;
+            std::process::exit(-1);
         }
         Ok(file) => file,
     };
     file.read_to_end(&mut buf)
         .ok()
         .expect("File could not be read.");
+
+    queue!(out, terminal::Clear(terminal::ClearType::All))?;
+    queue!(out, cursor::MoveTo(0, 0))?;
+    queue!(out, Print("Screenheight is ".to_string()))?;
+    queue!(out, Print(screenheight.to_string()))?;
+    queue!(out, Print("\n\r"))?;
+    out.flush()?;
+
+    enable_raw_mode()?;
 
     let draw_range = get_absolute_draw_indices(buf.len(), COLS, screenoffset);
     draw(
@@ -148,13 +152,25 @@ fn main() {
         &mut infoline,
         cursor,
         screenoffset,
-    );
+    )?;
 
     let mut quitnow = false;
     while quitnow == false {
         if autoparse.is_empty() {
-            let key = std::char::from_u32(getch() as u32).unwrap();
-            command.push_str(&key.clone().to_string());
+            let key = read()?;
+            let mut keycode: char = '\u{00}';
+            // This is close to the old c-style 'getch()':
+            match key {
+                Event::Key(event) => {
+                    keycode = extract(event.code).unwrap_or('\u{00}');
+                }
+                Event::Mouse(_event) => (), // This can be handled later
+                Event::FocusGained => (),   // This can be handled later
+                Event::FocusLost => (),     // This can be handled later
+                Event::Paste(_text) => (),  // This can be handled later
+                Event::Resize(_width, _height) => (), // This can be handled later
+            };
+            command.push_str(&keycode.clone().to_string());
         } else {
             command.push(autoparse.chars().nth(0).unwrap());
             autoparse.remove(0);
@@ -450,9 +466,9 @@ fn main() {
             &mut infoline,
             cursor,
             screenoffset,
-        );
+        )?;
     }
 
-    refresh();
-    endwin();
+    disable_raw_mode()?;
+    Ok(())
 }

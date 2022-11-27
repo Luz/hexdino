@@ -1,5 +1,15 @@
-extern crate ncurses;
-use ncurses::*;
+#![allow(unused_imports)]
+extern crate crossterm;
+use crossterm::{
+    cursor, queue,
+    style::{Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor, Stylize},
+    terminal,
+    terminal::{disable_raw_mode, enable_raw_mode},
+    Result,
+};
+use std::io::prelude::*;
+use std::io::stdout;
+
 use std::cmp;
 use CursorSelects;
 use CursorState;
@@ -11,11 +21,13 @@ pub fn draw(
     infoline: &mut String,
     cursor: CursorState,
     screenoffset: usize,
-) {
-    erase();
+) -> Result<()> {
+    let mut out = stdout();
+    queue!(out, terminal::Clear(terminal::ClearType::All))?;
+    queue!(out, cursor::MoveTo(0, 0))?;
 
-    let screenheight: usize;
-    screenheight = getmaxy(stdscr()) as usize;
+    let screensize = crossterm::terminal::size()?;
+    let screenheight: usize = screensize.1 as usize;
 
     let mut tmpbuflen = buf.len();
     if tmpbuflen >= 1 {
@@ -25,73 +37,83 @@ pub fn draw(
 
     for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=COLS)
-        addstr(&format!(
-            "{:08X}: ",
-            get_absolute_line(cols, screenoffset, z)
-        ));
+        let address: String = format!("{:08X}: ", get_absolute_line(cols, screenoffset, z));
+        queue!(out, Print(address))?;
         // Additional space between line number and hex
-        addstr(" ");
+        queue!(out, Print(" "))?;
         for s in 0..cols {
             let pos: usize = z * cols + s;
             if pos < buf.len() {
-                color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr(&format!("{:01X}", buf[pos] >> 4));
-                color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_left_nibble(cursor);
+                }
+                let left_nibble: String = format!("{:01X}", buf[pos] >> 4);
+                queue!(out, Print(left_nibble))?;
+                queue!(out, ResetColor)?;
 
-                color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr(&format!("{:01X}", buf[pos] & 0x0F));
-                color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_right_nibble(cursor);
+                }
+                let right_nibble: String = format!("{:01X}", buf[pos] & 0x0F);
+                queue!(out, Print(right_nibble))?;
+                queue!(out, ResetColor)?;
 
-                addstr(" ");
+                queue!(out, Print(" "))?;
             } else if pos == buf.len() {
-                color_left_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr("-");
-                color_left_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_left_nibble(cursor);
+                }
+                queue!(out, Print("-"))?;
+                queue!(out, ResetColor)?;
 
-                color_right_nibble_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
-                addstr("-");
-                color_right_nibble_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+                if pos + cols * screenoffset == cursor.pos {
+                    color_right_nibble(cursor);
+                }
+                queue!(out, Print("-"))?;
+                queue!(out, ResetColor)?;
 
-                addstr(" ");
+                queue!(out, Print(" "))?;
             } else {
-                addstr("-- ");
+                queue!(out, Print("-- "))?;
             }
         }
         // Additional space between hex and ascii
-        addstr(" ");
+        queue!(out, Print(" "))?;
         for s in 0..cols {
             let pos: usize = z * cols + s;
-            color_ascii_cond(true, pos + cols * screenoffset == cursor.pos, cursor);
+            color_ascii(pos + cols * screenoffset == cursor.pos, cursor);
             if pos < buf.len() {
                 if let c @ 32..=126 = buf[pos] {
-                    addstr(&format!("{}", c as char));
+                    let ascii_symbol: String = format!("{}", c as char);
+                    queue!(out, Print(ascii_symbol))?;
                 } else {
                     // Mark non-ascii symbols
-                    addstr(&format!("."));
+                    queue!(out, Print("."))?;
                 }
             } else if pos == buf.len() {
                 // Pad ascii with spaces
-                addstr(" ");
+                queue!(out, Print(" "))?;
             }
-
-            color_ascii_cond(false, pos + cols * screenoffset == cursor.pos, cursor);
+            queue!(out, ResetColor)?;
         }
-        addstr("\n");
+        queue!(out, Print("\n\r"))?;
     }
     for _ in 1..screenheight - rows {
         // Put the cursor on last line of terminal
-        addstr("\n");
+        queue!(out, Print("\n"))?;
     }
-    addstr(&format!("{}", command));
-    addstr(&format!("{}", infoline));
+    queue!(out, Print(command))?;
+    queue!(out, Print(infoline))?;
+    out.flush()?;
+    Ok(())
 }
 
 fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
     return z * cols + screenoffset * cols;
 }
 pub fn get_screen_size(cols: usize) -> usize {
-    let screenheight: usize;
-    screenheight = getmaxy(stdscr()) as usize;
+    let screensize = crossterm::terminal::size().unwrap_or_default();
+    let screenheight: usize = screensize.1 as usize;
 
     let mut ret: usize = 0;
 
@@ -117,65 +139,40 @@ pub fn get_absolute_draw_indices(
     return (starting_pos, ending_pos);
 }
 
-fn color_left_nibble(color: bool, cursor: CursorState) {
-    if color {
-        if cursor.sel == CursorSelects::LeftNibble {
-            attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            attron(A_UNDERLINE());
-        }
-    } else {
-        if cursor.sel == CursorSelects::LeftNibble {
-            attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            attroff(A_UNDERLINE());
-        }
-    }
-}
-fn color_left_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
-    if condition {
-        color_left_nibble(color, cursor);
+fn color_left_nibble(cursor: CursorState) {
+    if cursor.sel == CursorSelects::LeftNibble {
+        color_cursor();
+    } else if cursor.sel == CursorSelects::AsciiChar {
+        underline();
     }
 }
 
-fn color_right_nibble(color: bool, cursor: CursorState) {
-    if color {
-        if cursor.sel == CursorSelects::RightNibble {
-            attron(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            attron(A_UNDERLINE());
-        }
-    } else {
-        if cursor.sel == CursorSelects::RightNibble {
-            attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else if cursor.sel == CursorSelects::AsciiChar {
-            attroff(A_UNDERLINE());
-        }
-    }
-}
-fn color_right_nibble_cond(color: bool, condition: bool, cursor: CursorState) {
-    if condition {
-        color_right_nibble(color, cursor);
+fn color_right_nibble(cursor: CursorState) {
+    if cursor.sel == CursorSelects::RightNibble {
+        color_cursor();
+    } else if cursor.sel == CursorSelects::AsciiChar {
+        underline();
     }
 }
 
-fn color_ascii(color: bool, cursor: CursorState) {
-    if color {
+fn color_ascii(condition: bool, cursor: CursorState) {
+    if condition {
         if cursor.sel == CursorSelects::AsciiChar {
-            attron(COLOR_PAIR(1) | A_STANDOUT());
+            color_cursor();
         } else {
-            attron(A_UNDERLINE());
-        }
-    } else {
-        if cursor.sel == CursorSelects::AsciiChar {
-            attroff(COLOR_PAIR(1) | A_STANDOUT());
-        } else {
-            attroff(A_UNDERLINE());
+            underline();
         }
     }
 }
-fn color_ascii_cond(color: bool, condition: bool, cursor: CursorState) {
-    if condition {
-        color_ascii(color, cursor);
-    }
+// This is the actual cursor
+fn color_cursor() {
+    queue!(
+        stdout(),
+        SetBackgroundColor(Color::Green),
+        SetForegroundColor(Color::Black)
+    )
+    .unwrap_or(());
+}
+fn underline() {
+    queue!(stdout(), SetAttribute(Attribute::Underlined)).unwrap_or(());
 }
