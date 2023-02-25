@@ -1,52 +1,37 @@
 //! # Hexdino
 //!
 //! A hex editor with vim like keybindings written in Rust.
-
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
-#![deny(trivial_casts)]
 
-use std::cmp;
-use std::env;
-use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::stdout;
 use std::io::SeekFrom;
 use std::path::Path;
+use std::{cmp, env};
+
+use getopts::Options;
 
 mod draw;
-use draw::draw;
-use draw::get_absolute_draw_indices;
+use draw::{draw, get_absolute_draw_indices};
+
 mod find;
 use find::FindOptSubset;
+use memmem::{Searcher, TwoWaySearcher};
 
-extern crate crossterm;
 use crossterm::event::{read, Event};
 use crossterm::{
     cursor, queue,
     style::Print,
-    terminal,
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     Result,
 };
 
 mod keycodes;
-use keycodes::extract;
-
-extern crate getopts;
-use getopts::Options;
-
-extern crate pest;
-#[macro_use]
-extern crate pest_derive;
-
 use pest::Parser;
-
+use pest_derive::*;
 #[derive(Parser)]
 #[grammar = "cmd.pest"]
 struct CmdParser;
-
-extern crate memmem;
-use memmem::{Searcher, TwoWaySearcher};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum CursorSelects {
@@ -119,7 +104,7 @@ fn main() -> Result<()> {
     }
     let path = Path::new(&arg_filename);
 
-    let mut file = match OpenOptions::new()
+    let mut file = match std::fs::OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
@@ -135,7 +120,7 @@ fn main() -> Result<()> {
         .ok()
         .expect("File could not be read.");
 
-    queue!(out, terminal::Clear(terminal::ClearType::All))?;
+    queue!(out, Clear(ClearType::All))?;
     queue!(out, cursor::MoveTo(0, 0))?;
     queue!(out, Print("Screenheight is ".to_string()))?;
     queue!(out, Print(screenheight.to_string()))?;
@@ -162,7 +147,7 @@ fn main() -> Result<()> {
             // This is close to the old c-style 'getch()':
             match key {
                 Event::Key(event) => {
-                    keycode = extract(event.code).unwrap_or('\u{00}');
+                    keycode = keycodes::extract(event.code).unwrap_or('\u{00}');
                 }
                 Event::Mouse(_event) => (), // This can be handled later
                 Event::FocusGained => (),   // This can be handled later
@@ -420,7 +405,7 @@ fn main() -> Result<()> {
 
         if save {
             if path.exists() {
-                let mut file = match OpenOptions::new()
+                let mut file = match std::fs::OpenOptions::new()
                     .read(true)
                     .write(true)
                     .create(true)

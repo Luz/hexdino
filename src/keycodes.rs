@@ -1,4 +1,3 @@
-extern crate crossterm;
 use crossterm::event::KeyCode;
 
 // We do not care what platform we are on, we convert the platform independent events

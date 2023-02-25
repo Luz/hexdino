@@ -1,18 +1,15 @@
-#![allow(unused_imports)]
-extern crate crossterm;
 use crossterm::{
     cursor, queue,
-    style::{Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor, Stylize},
-    terminal,
-    terminal::{disable_raw_mode, enable_raw_mode},
-    Result,
+    style::{
+        Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
+    },
+    terminal, Result,
 };
 use std::io::prelude::*;
 use std::io::stdout;
 
-use std::cmp;
-use CursorSelects;
-use CursorState;
+use super::CursorSelects;
+use super::CursorState;
 
 pub fn draw(
     buf: &[u8],
@@ -128,7 +125,8 @@ pub fn get_absolute_draw_indices(
     cols: usize,
     screenoffset: usize,
 ) -> (usize, usize) {
-    let max_draw_len: usize = cmp::min(buflen, get_screen_size(cols)); //hier muss bei get_screen_size noch auf 16er abgerundet werden?
+    // Do we need to round() down to 16 when using get_screen_size()?
+    let max_draw_len: usize = std::cmp::min(buflen, get_screen_size(cols));
 
     let starting_pos: usize = screenoffset * cols;
     let mut ending_pos: usize = starting_pos + max_draw_len;
