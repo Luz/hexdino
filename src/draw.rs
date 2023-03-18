@@ -13,13 +13,18 @@ use super::CursorSelects;
 use super::CursorState;
 
 pub fn draw(
-    buf: &[u8],
+    total_buf: &[u8],
     cols: usize,
     command: &String,
     infoline: &mut String,
     cursor: CursorState,
     screenoffset: usize,
 ) -> Result<(), Error> {
+    let draw_range = get_absolute_draw_indices(total_buf.len(), cols, screenoffset);
+
+    let buf = &total_buf[draw_range.0..draw_range.1];
+    drop(total_buf);
+
     let mut out = stdout();
     queue!(out, terminal::Clear(terminal::ClearType::All))?;
     queue!(out, cursor::MoveTo(0, 0))?;
@@ -109,7 +114,7 @@ pub fn draw(
 fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
     return z * cols + screenoffset * cols;
 }
-pub fn get_screen_size(cols: usize) -> usize {
+fn get_screen_size(cols: usize) -> usize {
     let screensize = crossterm::terminal::size().unwrap_or_default();
     let screenheight: usize = screensize.1 as usize;
 
@@ -121,11 +126,7 @@ pub fn get_screen_size(cols: usize) -> usize {
     }
     return ret;
 }
-pub fn get_absolute_draw_indices(
-    buflen: usize,
-    cols: usize,
-    screenoffset: usize,
-) -> (usize, usize) {
+fn get_absolute_draw_indices(buflen: usize, cols: usize, screenoffset: usize) -> (usize, usize) {
     // Do we need to round() down to 16 when using get_screen_size()?
     let max_draw_len: usize = std::cmp::min(buflen, get_screen_size(cols));
 

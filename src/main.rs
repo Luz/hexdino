@@ -4,16 +4,15 @@
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 
 use anyhow::Error;
+use getopts::Options;
 use std::io::prelude::*;
 use std::io::stdout;
 use std::io::SeekFrom;
 use std::path::Path;
 use std::{cmp, env};
 
-use getopts::Options;
-
 mod draw;
-use draw::{draw, get_absolute_draw_indices};
+use draw::draw;
 
 mod find;
 use find::FindOptSubset;
@@ -47,7 +46,7 @@ pub struct CursorState {
 }
 
 fn main() -> Result<(), Error> {
-    let mut buf = vec![];
+    let mut buf = Vec::new();
     let mut cursor = CursorState {
         pos: 0,
         sel: CursorSelects::LeftNibble,
@@ -124,15 +123,7 @@ fn main() -> Result<(), Error> {
 
     enable_raw_mode()?;
 
-    let draw_range = get_absolute_draw_indices(buf.len(), COLS, screenoffset);
-    draw(
-        &buf[draw_range.0..draw_range.1],
-        COLS,
-        &command,
-        &mut infoline,
-        cursor,
-        screenoffset,
-    )?;
+    draw(&buf, COLS, &command, &mut infoline, cursor, screenoffset)?;
 
     let mut quitnow = false;
     while quitnow == false {
@@ -438,15 +429,7 @@ fn main() -> Result<(), Error> {
             screenoffset = cursor.pos / COLS;
         }
 
-        let draw_range = get_absolute_draw_indices(buf.len(), COLS, screenoffset);
-        draw(
-            &buf[draw_range.0..draw_range.1],
-            COLS,
-            &command,
-            &mut infoline,
-            cursor,
-            screenoffset,
-        )?;
+        draw(&buf, COLS, &command, &mut infoline, cursor, screenoffset)?;
     }
 
     disable_raw_mode()?;
