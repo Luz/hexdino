@@ -15,6 +15,7 @@ name = "hexdino"
 path = "src/main.rs"
 
 [dependencies]
+anyhow = "1.0.70"
 libc = "^0.2"
 crossterm = "^0.25.0"
 getopts = "^0.2"

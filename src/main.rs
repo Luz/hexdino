@@ -3,6 +3,7 @@
 //! A hex editor with vim like keybindings written in Rust.
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 
+use anyhow::Error;
 use std::io::prelude::*;
 use std::io::stdout;
 use std::io::SeekFrom;
@@ -23,7 +24,6 @@ use crossterm::{
     cursor, queue,
     style::Print,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
-    Result,
 };
 
 mod keycodes;
@@ -46,12 +46,7 @@ pub struct CursorState {
     sel: CursorSelects,
 }
 
-fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} FILENAME [options]", program);
-    print!("{}", opts.usage(&brief));
-}
-
-fn main() -> Result<()> {
+fn main() -> Result<(), Error> {
     let mut buf = vec![];
     let mut cursor = CursorState {
         pos: 0,
@@ -74,23 +69,24 @@ fn main() -> Result<()> {
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help menu");
     opts.optflag("v", "version", "print the version");
+    let brief = format!("Usage: {} FILENAME [options]", program);
     let arg_matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            println!("{}", f.to_string());
-            print_usage(&program, opts);
-            std::process::exit(-1);
+            println!("{}\n", f.to_string());
+            println!("{}", opts.usage(&brief));
+            anyhow::bail!("Wrong arguments");
         }
     };
     if arg_matches.opt_present("h") {
-        print_usage(&program, opts);
-        std::process::exit(0);
+        println!("{}", opts.usage(&brief));
+        return Ok(());
     }
     if arg_matches.opt_present("v") {
         println!("Name: {}", env!("CARGO_PKG_NAME"));
         println!("Version: {}", env!("CARGO_PKG_VERSION"));
         println!("Repository: {}", env!("CARGO_PKG_REPOSITORY"));
-        std::process::exit(0);
+        return Ok(());
     }
 
     let arg_filename = match arg_matches.free.is_empty() {
@@ -98,9 +94,9 @@ fn main() -> Result<()> {
         false => arg_matches.free[0].clone(),
     };
     if arg_filename.is_empty() {
-        println!("FILENAME is empty!\n");
-        print_usage(&program, opts);
-        std::process::exit(-1);
+        eprintln!("FILENAME is empty!\n");
+        println!("{}", opts.usage(&brief));
+        anyhow::bail!("FILENAME is empty!");
     }
     let path = Path::new(&arg_filename);
 
@@ -111,8 +107,7 @@ fn main() -> Result<()> {
         .open(&path)
     {
         Err(why) => {
-            println!("Could not open {}: {}", path.display(), why.to_string());
-            std::process::exit(-1);
+            anyhow::bail!("Could not open {}: {}", path.display(), why.to_string());
         }
         Ok(file) => file,
     };

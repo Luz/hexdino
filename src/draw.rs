@@ -1,9 +1,10 @@
+use anyhow::Error;
 use crossterm::{
     cursor, queue,
     style::{
         Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
     },
-    terminal, Result,
+    terminal,
 };
 use std::io::prelude::*;
 use std::io::stdout;
@@ -18,7 +19,7 @@ pub fn draw(
     infoline: &mut String,
     cursor: CursorState,
     screenoffset: usize,
-) -> Result<()> {
+) -> Result<(), Error> {
     let mut out = stdout();
     queue!(out, terminal::Clear(terminal::ClearType::All))?;
     queue!(out, cursor::MoveTo(0, 0))?;
