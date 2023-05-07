@@ -3,7 +3,7 @@
 //! A hex editor with vim like keybindings written in Rust.
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 
-use anyhow::Error;
+use anyhow::{Context, Error};
 use std::io::prelude::*;
 use std::io::stdout;
 use std::io::SeekFrom;
@@ -75,20 +75,14 @@ fn main() -> Result<(), Error> {
 
     let path = Path::new(&opt.filename);
 
-    let mut file = match std::fs::OpenOptions::new()
+    let mut file = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
         .open(&path)
-    {
-        Err(why) => {
-            anyhow::bail!("Could not open {}: {}", path.display(), why.to_string());
-        }
-        Ok(file) => file,
-    };
-    file.read_to_end(&mut buf)
-        .ok()
-        .expect("File could not be read.");
+        .context("File could not be opened.")?;
+
+    file.read_to_end(&mut buf).expect("File could not be read.");
 
     queue!(out, Clear(ClearType::All))?;
     queue!(out, cursor::MoveTo(0, 0))?;
@@ -367,25 +361,17 @@ fn main() -> Result<(), Error> {
 
         if save {
             if path.exists() {
-                let mut file = match std::fs::OpenOptions::new()
+                let mut file = std::fs::OpenOptions::new()
                     .read(true)
                     .write(true)
                     .create(true)
                     .open(&path)
-                {
-                    Err(why) => {
-                        panic!("Could not open {}: {}", path.display(), why.to_string())
-                    }
-                    Ok(file) => file,
-                };
+                    .context("File could not be opened.")?;
                 file.seek(SeekFrom::Start(0))
-                    .ok()
                     .expect("Filepointer could not be set to 0");
                 file.write_all(&mut buf)
-                    .ok()
                     .expect("File could not be written.");
                 file.set_len(buf.len() as u64)
-                    .ok()
                     .expect("File could not be set to correct lenght.");
                 command.push_str("File saved!");
             } else {
