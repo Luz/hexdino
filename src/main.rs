@@ -4,12 +4,12 @@
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 
 use anyhow::Error;
-use getopts::Options;
 use std::io::prelude::*;
 use std::io::stdout;
 use std::io::SeekFrom;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{cmp, env};
+use structopt::StructOpt;
 
 mod draw;
 use draw::draw;
@@ -45,7 +45,17 @@ pub struct CursorState {
     sel: CursorSelects,
 }
 
+#[derive(StructOpt)]
+#[structopt(name = env!("CARGO_PKG_NAME"))]
+struct Opt {
+    // This is always required for now, as we have no commands to load a file
+    #[structopt(required = true, parse(from_os_str))]
+    filename: PathBuf,
+}
+
 fn main() -> Result<(), Error> {
+    let opt = Opt::from_args();
+
     let mut buf = Vec::new();
     let mut cursor = CursorState {
         pos: 0,
@@ -63,41 +73,7 @@ fn main() -> Result<(), Error> {
     let screensize = crossterm::terminal::size()?;
     let screenheight: usize = screensize.1 as usize;
 
-    let args: Vec<String> = env::args().collect();
-    let program = args[0].clone();
-    let mut opts = Options::new();
-    opts.optflag("h", "help", "print this help menu");
-    opts.optflag("v", "version", "print the version");
-    let brief = format!("Usage: {} FILENAME [options]", program);
-    let arg_matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(f) => {
-            println!("{}\n", f.to_string());
-            println!("{}", opts.usage(&brief));
-            anyhow::bail!("Wrong arguments");
-        }
-    };
-    if arg_matches.opt_present("h") {
-        println!("{}", opts.usage(&brief));
-        return Ok(());
-    }
-    if arg_matches.opt_present("v") {
-        println!("Name: {}", env!("CARGO_PKG_NAME"));
-        println!("Version: {}", env!("CARGO_PKG_VERSION"));
-        println!("Repository: {}", env!("CARGO_PKG_REPOSITORY"));
-        return Ok(());
-    }
-
-    let arg_filename = match arg_matches.free.is_empty() {
-        true => String::new(),
-        false => arg_matches.free[0].clone(),
-    };
-    if arg_filename.is_empty() {
-        eprintln!("FILENAME is empty!\n");
-        println!("{}", opts.usage(&brief));
-        anyhow::bail!("FILENAME is empty!");
-    }
-    let path = Path::new(&arg_filename);
+    let path = Path::new(&opt.filename);
 
     let mut file = match std::fs::OpenOptions::new()
         .read(true)
