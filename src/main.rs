@@ -49,7 +49,7 @@ pub struct CursorState {
 #[clap(version, long_about = None)]
 struct Args {
     // This is always required for now, as we have no commands to load a file
-    #[clap(required = true, parse(from_os_str))]
+    #[clap(required = true, value_parser)]
     filename: PathBuf,
 }
 
