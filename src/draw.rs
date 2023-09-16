@@ -23,7 +23,6 @@ pub fn draw(
     let draw_range = get_absolute_draw_indices(total_buf.len(), cols, screenoffset);
 
     let buf = &total_buf[draw_range.0..draw_range.1];
-    drop(total_buf);
 
     let mut out = stdout();
     queue!(out, terminal::Clear(terminal::ClearType::All))?;
