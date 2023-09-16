@@ -4,12 +4,12 @@
 #![doc(html_logo_url = "https://raw.githubusercontent.com/Luz/hexdino/master/logo.png")]
 
 use anyhow::{Context, Error};
+use clap::Parser as ArgParser;
+use std::cmp;
 use std::io::prelude::*;
 use std::io::stdout;
 use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
-use std::{cmp, env};
-use structopt::StructOpt;
 
 mod draw;
 use draw::draw;
@@ -45,16 +45,16 @@ pub struct CursorState {
     sel: CursorSelects,
 }
 
-#[derive(StructOpt)]
-#[structopt(name = env!("CARGO_PKG_NAME"))]
-struct Opt {
+#[derive(ArgParser)]
+#[clap(version, long_about = None)]
+struct Args {
     // This is always required for now, as we have no commands to load a file
-    #[structopt(required = true, parse(from_os_str))]
+    #[clap(required = true, parse(from_os_str))]
     filename: PathBuf,
 }
 
 fn main() -> Result<(), Error> {
-    let opt = Opt::from_args();
+    let args = Args::parse();
 
     let mut buf = Vec::new();
     let mut cursor = CursorState {
@@ -73,7 +73,7 @@ fn main() -> Result<(), Error> {
     let screensize = crossterm::terminal::size()?;
     let screenheight: usize = screensize.1 as usize;
 
-    let path = Path::new(&opt.filename);
+    let path = Path::new(&args.filename);
 
     let mut file = std::fs::OpenOptions::new()
         .read(true)
