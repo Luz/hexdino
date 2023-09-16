@@ -125,7 +125,7 @@ fn find_with_wildcard_0xf0() {
     assert_eq!(buf.find_subset(&sub), Some(1));
 }
 #[test]
-fn find_with_wildcard_xX() {
+fn find_with_wildcard_x_big_x() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x03, 0x0C, 'x' as u8, 'X' as u8, 0x0E, 0x0E];
     assert_eq!(buf.find_subset(&sub), Some(1));
