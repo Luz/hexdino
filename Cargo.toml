@@ -21,5 +21,5 @@ crossterm = "0.25.0"
 pest = "2.1"
 pest_derive = "2.1"
 memmem = "0.1.1"
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 
