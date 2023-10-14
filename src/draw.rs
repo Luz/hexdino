@@ -9,8 +9,8 @@ use crossterm::{
 use std::io::prelude::*;
 use std::io::stdout;
 
+use super::Cursor;
 use super::CursorSelects;
-use super::CursorState;
 
 fn clear_draw() -> Result<(), Error> {
     let mut out = stdout();
@@ -25,7 +25,7 @@ pub fn draw(
     cols: usize,
     command: &String,
     infoline: &mut String,
-    cursor: CursorState,
+    cursor: Cursor,
     screenoffset: usize,
 ) -> Result<(), Error> {
     let draw_range = get_absolute_draw_indices(total_buf.len(), cols, screenoffset);
@@ -145,7 +145,7 @@ fn get_absolute_draw_indices(buflen: usize, cols: usize, screenoffset: usize) ->
     return (starting_pos, ending_pos);
 }
 
-fn color_left_nibble(cursor: CursorState) {
+fn color_left_nibble(cursor: Cursor) {
     if cursor.sel == CursorSelects::LeftNibble {
         color_cursor();
     } else if cursor.sel == CursorSelects::AsciiChar {
@@ -153,7 +153,7 @@ fn color_left_nibble(cursor: CursorState) {
     }
 }
 
-fn color_right_nibble(cursor: CursorState) {
+fn color_right_nibble(cursor: Cursor) {
     if cursor.sel == CursorSelects::RightNibble {
         color_cursor();
     } else if cursor.sel == CursorSelects::AsciiChar {
@@ -161,7 +161,7 @@ fn color_right_nibble(cursor: CursorState) {
     }
 }
 
-fn color_ascii(condition: bool, cursor: CursorState) {
+fn color_ascii(condition: bool, cursor: Cursor) {
     if condition {
         if cursor.sel == CursorSelects::AsciiChar {
             color_cursor();

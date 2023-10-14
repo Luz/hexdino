@@ -36,7 +36,7 @@ pub enum CursorSelects {
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct CursorState {
+pub struct Cursor {
     pos: usize,
     sel: CursorSelects,
 }
@@ -53,7 +53,7 @@ fn main() -> Result<(), Error> {
     let args = Args::parse();
 
     let mut buf = Vec::new();
-    let mut cursor = CursorState::default();
+    let mut cursor = Cursor::default();
     // 0 = display data from first line of file
     let mut screenoffset: usize = 0;
     const COLS: usize = 16;
