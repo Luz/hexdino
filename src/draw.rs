@@ -10,7 +10,6 @@ use std::io::prelude::*;
 use std::io::stdout;
 
 use super::Cursor;
-use super::CursorSelects;
 
 fn clear_draw() -> Result<(), Error> {
     let mut out = stdout();
@@ -53,14 +52,14 @@ pub fn draw(
         for s in 0..cols {
             let pos: usize = z * cols + s;
             if pos < buf.len() {
-                if pos + cols * screenoffset == cursor.pos {
+                if pos + cols * screenoffset == cursor.pos() {
                     color_left_nibble(cursor);
                 }
                 let left_nibble: String = format!("{:01X}", buf[pos] >> 4);
                 queue!(out, Print(left_nibble))?;
                 queue!(out, ResetColor)?;
 
-                if pos + cols * screenoffset == cursor.pos {
+                if pos + cols * screenoffset == cursor.pos() {
                     color_right_nibble(cursor);
                 }
                 let right_nibble: String = format!("{:01X}", buf[pos] & 0x0F);
@@ -69,13 +68,13 @@ pub fn draw(
 
                 queue!(out, Print(" "))?;
             } else if pos == buf.len() {
-                if pos + cols * screenoffset == cursor.pos {
+                if pos + cols * screenoffset == cursor.pos() {
                     color_left_nibble(cursor);
                 }
                 queue!(out, Print("-"))?;
                 queue!(out, ResetColor)?;
 
-                if pos + cols * screenoffset == cursor.pos {
+                if pos + cols * screenoffset == cursor.pos() {
                     color_right_nibble(cursor);
                 }
                 queue!(out, Print("-"))?;
@@ -90,7 +89,7 @@ pub fn draw(
         queue!(out, Print(" "))?;
         for s in 0..cols {
             let pos: usize = z * cols + s;
-            color_ascii(pos + cols * screenoffset == cursor.pos, cursor);
+            color_ascii(pos + cols * screenoffset == cursor.pos(), cursor);
             if pos < buf.len() {
                 if let c @ 32..=126 = buf[pos] {
                     let ascii_symbol: String = format!("{}", c as char);
@@ -146,24 +145,24 @@ fn get_absolute_draw_indices(buflen: usize, cols: usize, screenoffset: usize) ->
 }
 
 fn color_left_nibble(cursor: Cursor) {
-    if cursor.sel == CursorSelects::LeftNibble {
+    if cursor.is_over_left_nibble() {
         color_cursor();
-    } else if cursor.sel == CursorSelects::AsciiChar {
+    } else if cursor.is_over_ascii() {
         underline();
     }
 }
 
 fn color_right_nibble(cursor: Cursor) {
-    if cursor.sel == CursorSelects::RightNibble {
+    if cursor.is_over_right_nibble() {
         color_cursor();
-    } else if cursor.sel == CursorSelects::AsciiChar {
+    } else if cursor.is_over_ascii() {
         underline();
     }
 }
 
 fn color_ascii(condition: bool, cursor: Cursor) {
     if condition {
-        if cursor.sel == CursorSelects::AsciiChar {
+        if cursor.is_over_ascii() {
             color_cursor();
         } else {
             underline();

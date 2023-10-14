@@ -41,6 +41,30 @@ pub struct Cursor {
     sel: CursorSelects,
 }
 
+impl Cursor {
+    pub fn is_over_left_nibble(&self) -> bool {
+        self.sel == CursorSelects::LeftNibble
+    }
+    pub fn is_over_right_nibble(&self) -> bool {
+        self.sel == CursorSelects::RightNibble
+    }
+    pub fn is_over_ascii(&self) -> bool {
+        self.sel == CursorSelects::AsciiChar
+    }
+    pub fn select_left_nibble(&mut self) {
+        self.sel = CursorSelects::LeftNibble;
+    }
+    pub fn select_right_nibble(&mut self) {
+        self.sel = CursorSelects::RightNibble;
+    }
+    pub fn select_ascii(&mut self) {
+        self.sel = CursorSelects::AsciiChar;
+    }
+    pub fn pos(&self) -> usize {
+        self.pos
+    }
+}
+
 #[derive(ArgParser)]
 #[clap(version, long_about = None)]
 struct Args {
@@ -112,7 +136,7 @@ fn main() -> Result<(), Error> {
 
         match cmd.as_rule() {
             Rule::down => {
-                if cursor.pos + COLS < buf.len() {
+                if cursor.pos() + COLS < buf.len() {
                     // not at end
                     cursor.pos += COLS;
                 } else {
@@ -121,91 +145,87 @@ fn main() -> Result<(), Error> {
                 }
             }
             Rule::up => {
-                if cursor.pos >= COLS {
+                if cursor.pos() >= COLS {
                     cursor.pos -= COLS;
                 }
             }
             Rule::left => {
-                if cursor.sel == CursorSelects::AsciiChar {
-                    if cursor.pos > 0 {
+                if cursor.is_over_ascii() {
+                    if cursor.pos() > 0 {
                         cursor.pos -= 1;
                     }
-                } else if cursor.sel == CursorSelects::RightNibble {
-                    cursor.sel = CursorSelects::LeftNibble;
-                } else if cursor.sel == CursorSelects::LeftNibble {
-                    if cursor.pos > 0 {
+                } else if cursor.is_over_right_nibble() {
+                    cursor.select_left_nibble();
+                } else if cursor.is_over_left_nibble() {
+                    if cursor.pos() > 0 {
                         // not at start
-                        cursor.sel = CursorSelects::RightNibble;
+                        cursor.select_right_nibble();
                         cursor.pos -= 1;
                     }
                 }
             }
             Rule::right => {
-                if cursor.sel == CursorSelects::AsciiChar {
-                    if cursor.pos + 1 < buf.len() {
+                if cursor.is_over_ascii() {
+                    if cursor.pos() + 1 < buf.len() {
                         // not at end
                         cursor.pos += 1;
                     }
-                } else if cursor.sel == CursorSelects::LeftNibble {
-                    cursor.sel = CursorSelects::RightNibble;
-                } else if cursor.sel == CursorSelects::RightNibble {
-                    if cursor.pos + 1 < buf.len() {
+                } else if cursor.is_over_left_nibble() {
+                    cursor.select_right_nibble();
+                } else if cursor.is_over_right_nibble() {
+                    if cursor.pos() + 1 < buf.len() {
                         // not at end
-                        cursor.sel = CursorSelects::LeftNibble;
+                        cursor.select_left_nibble();
                         cursor.pos += 1;
                     }
                 }
             }
             Rule::start => {
-                cursor.pos -= cursor.pos % COLS; // jump to start of line
-                if cursor.sel == CursorSelects::RightNibble {
-                    cursor.sel = CursorSelects::LeftNibble;
+                cursor.pos -= cursor.pos() % COLS; // jump to start of line
+                if cursor.is_over_right_nibble() {
+                    cursor.select_left_nibble();
                 }
             }
             Rule::end => {
                 // check if no overflow
-                if cursor.pos - (cursor.pos % COLS) + (COLS - 1) < buf.len() {
+                if cursor.pos() - (cursor.pos() % COLS) + (COLS - 1) < buf.len() {
                     // jump to end of line
-                    cursor.pos = cursor.pos - (cursor.pos % COLS) + (COLS - 1);
+                    cursor.pos = cursor.pos() - (cursor.pos() % COLS) + (COLS - 1);
                 } else {
                     // jump to end of line
                     cursor.pos = buf.len().saturating_sub(1);
                 }
-                if cursor.sel == CursorSelects::LeftNibble {
-                    cursor.sel = CursorSelects::RightNibble;
+                if cursor.is_over_left_nibble() {
+                    cursor.select_right_nibble();
                 }
             }
             Rule::bottom => {
                 cursor.pos = buf.len().saturating_sub(1);
-                cursor.pos -= cursor.pos % COLS; // jump to start of line
+                cursor.pos -= cursor.pos() % COLS; // jump to start of line
             }
             Rule::replace => {
                 clear = false;
             }
             Rule::replacement => {
                 let key = command.chars().last().unwrap_or('x');
-                if cursor.sel == CursorSelects::AsciiChar {
-                    if cursor.pos >= buf.len() {
-                        buf.insert(cursor.pos, 0);
+                if cursor.is_over_ascii() {
+                    if cursor.pos() >= buf.len() {
+                        buf.insert(cursor.pos(), 0);
                     }
-                    buf[cursor.pos] = key as u8;
+                    buf[cursor.pos()] = key as u8;
                 } else {
-                    let mask = if cursor.sel == CursorSelects::LeftNibble {
+                    let mask = if cursor.is_over_left_nibble() {
                         0x0F
                     } else {
                         0xF0
                     };
-                    let shift = if cursor.sel == CursorSelects::LeftNibble {
-                        4
-                    } else {
-                        0
-                    };
-                    if cursor.pos >= buf.len() {
-                        buf.insert(cursor.pos, 0);
+                    let shift = if cursor.is_over_left_nibble() { 4 } else { 0 };
+                    if cursor.pos() >= buf.len() {
+                        buf.insert(cursor.pos(), 0);
                     }
                     // Change the selected nibble
                     if let Some(c) = key.to_digit(16) {
-                        buf[cursor.pos] = buf[cursor.pos] & mask | (c as u8) << shift;
+                        buf[cursor.pos()] = buf[cursor.pos()] & mask | (c as u8) << shift;
                     }
                 }
                 lastcommand = command.clone();
@@ -216,24 +236,24 @@ fn main() -> Result<(), Error> {
             }
             Rule::remove => {
                 // check if in valid range
-                if buf.len() > 0 && cursor.pos < buf.len() {
+                if buf.len() > 0 && cursor.pos() < buf.len() {
                     // remove the current char
-                    buf.remove(cursor.pos);
+                    buf.remove(cursor.pos());
                 }
                 // Move left if cursor is currently out of data
-                if cursor.pos >= buf.len() {
-                    cursor.pos = cursor.pos.saturating_sub(1);
+                if cursor.pos() >= buf.len() {
+                    cursor.pos = cursor.pos().saturating_sub(1);
                 }
                 lastcommand = command.clone();
             }
             Rule::dd => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
-                if cursor.pos < buf.len() {
-                    let startofline = cursor.pos - cursor.pos % COLS;
-                    let mut endofline = cursor.pos - (cursor.pos % COLS) + (COLS * amount);
+                if cursor.pos() < buf.len() {
+                    let startofline = cursor.pos() - cursor.pos() % COLS;
+                    let mut endofline = cursor.pos() - (cursor.pos() % COLS) + (COLS * amount);
                     endofline = cmp::min(endofline, buf.len());
                     buf.drain(startofline..endofline);
-                    if cursor.pos >= buf.len() {
+                    if cursor.pos() >= buf.len() {
                         cursor.pos = buf.len().saturating_sub(1);
                     }
                 }
@@ -247,24 +267,24 @@ fn main() -> Result<(), Error> {
             Rule::insertstuff => {
                 let key = command.chars().last().unwrap_or('x');
 
-                if cursor.sel == CursorSelects::LeftNibble {
+                if cursor.is_over_left_nibble() {
                     // Left nibble
                     if let Some(c) = key.to_digit(16) {
-                        buf.insert(cursor.pos, (c as u8) << 4);
-                        cursor.sel = CursorSelects::RightNibble;
+                        buf.insert(cursor.pos(), (c as u8) << 4);
+                        cursor.select_right_nibble();
                     }
-                } else if cursor.sel == CursorSelects::RightNibble {
+                } else if cursor.is_over_right_nibble() {
                     // Right nibble
-                    if cursor.pos == buf.len() {
-                        buf.insert(cursor.pos, 0);
+                    if cursor.pos() == buf.len() {
+                        buf.insert(cursor.pos(), 0);
                     }
                     if let Some(c) = key.to_digit(16) {
-                        buf[cursor.pos] = buf[cursor.pos] & 0xF0 | c as u8;
-                        cursor.sel = CursorSelects::LeftNibble;
+                        buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | c as u8;
+                        cursor.select_left_nibble();
                         cursor.pos += 1;
                     }
-                } else if cursor.sel == CursorSelects::AsciiChar {
-                    buf.insert(cursor.pos, key as u8);
+                } else if cursor.is_over_ascii() {
+                    buf.insert(cursor.pos(), key as u8);
                     cursor.pos += 1;
                 }
 
@@ -275,10 +295,10 @@ fn main() -> Result<(), Error> {
                 clear = true;
             }
             Rule::jumpascii => {
-                if cursor.sel == CursorSelects::AsciiChar {
-                    cursor.sel = CursorSelects::LeftNibble;
+                if cursor.is_over_ascii() {
+                    cursor.select_left_nibble();
                 } else {
-                    cursor.sel = CursorSelects::AsciiChar;
+                    cursor.select_ascii();
                 }
             }
             Rule::helpfile => {
@@ -292,18 +312,18 @@ fn main() -> Result<(), Error> {
             Rule::gg => {
                 let linenr: usize = cmd.as_str().parse().unwrap_or(0);
                 cursor.pos = linenr * COLS; // jump to the line
-                if cursor.pos > buf.len() {
+                if cursor.pos() > buf.len() {
                     // detect file end
                     cursor.pos = buf.len();
                 }
-                cursor.pos -= cursor.pos % COLS; // jump to start of line
+                cursor.pos -= cursor.pos() % COLS; // jump to start of line
                 clear = true;
             }
             Rule::searchend => {
                 let searchstr = cmd.clone().into_inner().as_str();
                 let search = searchstr.as_bytes();
                 let foundpos = TwoWaySearcher::new(&search);
-                cursor.pos = foundpos.search_in(&buf).unwrap_or(cursor.pos);
+                cursor.pos = foundpos.search_in(&buf).unwrap_or(cursor.pos());
                 clear = true;
             }
             Rule::hexsearchend => {
@@ -321,7 +341,7 @@ fn main() -> Result<(), Error> {
                     };
                     needle.push(nibble);
                 }
-                cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos);
+                cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos());
                 // infoline.push_str(&format!("Searching for: {:?}", needle ));
             }
             Rule::backspace => {
@@ -368,11 +388,11 @@ fn main() -> Result<(), Error> {
         }
 
         // Always move screen when cursor leaves screen
-        if cursor.pos > (screenheight + screenoffset - 1) * COLS - 1 {
-            screenoffset = 2 + cursor.pos / COLS - screenheight;
+        if cursor.pos() > (screenheight + screenoffset - 1) * COLS - 1 {
+            screenoffset = 2 + cursor.pos() / COLS - screenheight;
         }
-        if cursor.pos < screenoffset * COLS {
-            screenoffset = cursor.pos / COLS;
+        if cursor.pos() < screenoffset * COLS {
+            screenoffset = cursor.pos() / COLS;
         }
 
         draw(&buf, COLS, &command, &mut infoline, cursor, screenoffset)?;
