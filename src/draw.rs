@@ -12,6 +12,14 @@ use std::io::stdout;
 use super::CursorSelects;
 use super::CursorState;
 
+fn clear_draw() -> Result<(), Error> {
+    let mut out = stdout();
+    queue!(out, terminal::Clear(terminal::ClearType::All))?;
+    queue!(out, cursor::MoveTo(0, 0))?;
+    out.flush()?;
+    Ok(())
+}
+
 pub fn draw(
     total_buf: &[u8],
     cols: usize,
@@ -24,9 +32,8 @@ pub fn draw(
 
     let buf = &total_buf[draw_range.0..draw_range.1];
 
+    clear_draw()?;
     let mut out = stdout();
-    queue!(out, terminal::Clear(terminal::ClearType::All))?;
-    queue!(out, cursor::MoveTo(0, 0))?;
 
     let screensize = crossterm::terminal::size()?;
     let screenheight: usize = screensize.1 as usize;

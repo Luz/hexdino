@@ -7,7 +7,6 @@ use anyhow::{Context, Error};
 use clap::Parser as ArgParser;
 use std::cmp;
 use std::io::prelude::*;
-use std::io::stdout;
 use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 
@@ -19,11 +18,7 @@ use find::FindOptSubset;
 use memmem::{Searcher, TwoWaySearcher};
 
 use crossterm::event::{read, Event};
-use crossterm::{
-    cursor, queue,
-    style::Print,
-    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
-};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
 mod keycodes;
 use pest::Parser;
@@ -67,7 +62,6 @@ fn main() -> Result<(), Error> {
     let mut autoparse = String::new();
     let mut infoline = String::new();
 
-    let mut out = stdout();
     let screensize = crossterm::terminal::size()?;
     let screenheight: usize = screensize.1 as usize;
 
@@ -82,15 +76,7 @@ fn main() -> Result<(), Error> {
 
     file.read_to_end(&mut buf).expect("File could not be read.");
 
-    queue!(out, Clear(ClearType::All))?;
-    queue!(out, cursor::MoveTo(0, 0))?;
-    queue!(out, Print("Screenheight is ".to_string()))?;
-    queue!(out, Print(screenheight.to_string()))?;
-    queue!(out, Print("\n\r"))?;
-    out.flush()?;
-
     enable_raw_mode()?;
-
     draw(&buf, COLS, &command, &mut infoline, cursor, screenoffset)?;
 
     let mut quitnow = false;
