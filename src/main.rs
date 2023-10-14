@@ -27,43 +27,8 @@ use pest_derive::*;
 #[grammar = "cmd.pest"]
 struct CmdParser;
 
-#[derive(PartialEq, Copy, Clone, Default)]
-pub enum CursorSelects {
-    #[default]
-    LeftNibble,
-    RightNibble,
-    AsciiChar,
-}
-
-#[derive(Copy, Clone, Default)]
-pub struct Cursor {
-    pos: usize,
-    sel: CursorSelects,
-}
-
-impl Cursor {
-    pub fn is_over_left_nibble(&self) -> bool {
-        self.sel == CursorSelects::LeftNibble
-    }
-    pub fn is_over_right_nibble(&self) -> bool {
-        self.sel == CursorSelects::RightNibble
-    }
-    pub fn is_over_ascii(&self) -> bool {
-        self.sel == CursorSelects::AsciiChar
-    }
-    pub fn select_left_nibble(&mut self) {
-        self.sel = CursorSelects::LeftNibble;
-    }
-    pub fn select_right_nibble(&mut self) {
-        self.sel = CursorSelects::RightNibble;
-    }
-    pub fn select_ascii(&mut self) {
-        self.sel = CursorSelects::AsciiChar;
-    }
-    pub fn pos(&self) -> usize {
-        self.pos
-    }
-}
+mod cursor;
+use cursor::Cursor;
 
 #[derive(ArgParser)]
 #[clap(version, long_about = None)]
@@ -138,29 +103,29 @@ fn main() -> Result<(), Error> {
             Rule::down => {
                 if cursor.pos() + COLS < buf.len() {
                     // not at end
-                    cursor.pos += COLS;
+                    cursor.set_pos(cursor.pos() + COLS);
                 } else {
                     // when at end
-                    cursor.pos = buf.len().saturating_sub(1);
+                    cursor.set_pos(buf.len().saturating_sub(1));
                 }
             }
             Rule::up => {
                 if cursor.pos() >= COLS {
-                    cursor.pos -= COLS;
+                    cursor.set_pos(cursor.pos() - COLS);
                 }
             }
             Rule::left => {
                 if cursor.is_over_ascii() {
-                    if cursor.pos() > 0 {
-                        cursor.pos -= 1;
+                    if cursor.pos() >= 1 {
+                        cursor.set_pos(cursor.pos() - 1);
                     }
                 } else if cursor.is_over_right_nibble() {
                     cursor.select_left_nibble();
                 } else if cursor.is_over_left_nibble() {
-                    if cursor.pos() > 0 {
+                    if cursor.pos() >= 1 {
                         // not at start
                         cursor.select_right_nibble();
-                        cursor.pos -= 1;
+                        cursor.set_pos(cursor.pos() - 1);
                     }
                 }
             }
@@ -168,7 +133,7 @@ fn main() -> Result<(), Error> {
                 if cursor.is_over_ascii() {
                     if cursor.pos() + 1 < buf.len() {
                         // not at end
-                        cursor.pos += 1;
+                        cursor.set_pos(cursor.pos() + 1);
                     }
                 } else if cursor.is_over_left_nibble() {
                     cursor.select_right_nibble();
@@ -176,12 +141,13 @@ fn main() -> Result<(), Error> {
                     if cursor.pos() + 1 < buf.len() {
                         // not at end
                         cursor.select_left_nibble();
-                        cursor.pos += 1;
+                        cursor.set_pos(cursor.pos() + 1);
                     }
                 }
             }
             Rule::start => {
-                cursor.pos -= cursor.pos() % COLS; // jump to start of line
+                // jump to start of line
+                cursor.set_pos(cursor.pos() - cursor.pos() % COLS);
                 if cursor.is_over_right_nibble() {
                     cursor.select_left_nibble();
                 }
@@ -190,18 +156,19 @@ fn main() -> Result<(), Error> {
                 // check if no overflow
                 if cursor.pos() - (cursor.pos() % COLS) + (COLS - 1) < buf.len() {
                     // jump to end of line
-                    cursor.pos = cursor.pos() - (cursor.pos() % COLS) + (COLS - 1);
+                    cursor.set_pos(cursor.pos() - (cursor.pos() % COLS) + (COLS - 1));
                 } else {
                     // jump to end of line
-                    cursor.pos = buf.len().saturating_sub(1);
+                    cursor.set_pos(buf.len().saturating_sub(1));
                 }
                 if cursor.is_over_left_nibble() {
                     cursor.select_right_nibble();
                 }
             }
             Rule::bottom => {
-                cursor.pos = buf.len().saturating_sub(1);
-                cursor.pos -= cursor.pos() % COLS; // jump to start of line
+                cursor.set_pos(buf.len().saturating_sub(1));
+                // jump to start of line
+                cursor.set_pos(cursor.pos() - cursor.pos() % COLS);
             }
             Rule::replace => {
                 clear = false;
@@ -242,7 +209,7 @@ fn main() -> Result<(), Error> {
                 }
                 // Move left if cursor is currently out of data
                 if cursor.pos() >= buf.len() {
-                    cursor.pos = cursor.pos().saturating_sub(1);
+                    cursor.set_pos(cursor.pos().saturating_sub(1));
                 }
                 lastcommand = command.clone();
             }
@@ -254,7 +221,7 @@ fn main() -> Result<(), Error> {
                     endofline = cmp::min(endofline, buf.len());
                     buf.drain(startofline..endofline);
                     if cursor.pos() >= buf.len() {
-                        cursor.pos = buf.len().saturating_sub(1);
+                        cursor.set_pos(buf.len().saturating_sub(1));
                     }
                 }
                 lastcommand = command.clone();
@@ -281,11 +248,11 @@ fn main() -> Result<(), Error> {
                     if let Some(c) = key.to_digit(16) {
                         buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | c as u8;
                         cursor.select_left_nibble();
-                        cursor.pos += 1;
+                        cursor.set_pos(cursor.pos() + 1);
                     }
                 } else if cursor.is_over_ascii() {
                     buf.insert(cursor.pos(), key as u8);
-                    cursor.pos += 1;
+                    cursor.set_pos(cursor.pos() + 1);
                 }
 
                 clear = false;
@@ -311,19 +278,20 @@ fn main() -> Result<(), Error> {
             }
             Rule::gg => {
                 let linenr: usize = cmd.as_str().parse().unwrap_or(0);
-                cursor.pos = linenr * COLS; // jump to the line
+                cursor.set_pos(linenr * COLS); // jump to the line
                 if cursor.pos() > buf.len() {
                     // detect file end
-                    cursor.pos = buf.len();
+                    cursor.set_pos(buf.len());
                 }
-                cursor.pos -= cursor.pos() % COLS; // jump to start of line
+                // jump to start of line:
+                cursor.set_pos(cursor.pos() - cursor.pos() % COLS);
                 clear = true;
             }
             Rule::searchend => {
                 let searchstr = cmd.clone().into_inner().as_str();
                 let search = searchstr.as_bytes();
                 let foundpos = TwoWaySearcher::new(&search);
-                cursor.pos = foundpos.search_in(&buf).unwrap_or(cursor.pos());
+                cursor.set_pos(foundpos.search_in(&buf).unwrap_or(cursor.pos()));
                 clear = true;
             }
             Rule::hexsearchend => {
@@ -341,7 +309,7 @@ fn main() -> Result<(), Error> {
                     };
                     needle.push(nibble);
                 }
-                cursor.pos = buf.find_subset(&needle).unwrap_or(cursor.pos());
+                cursor.set_pos(buf.find_subset(&needle).unwrap_or(cursor.pos()));
                 // infoline.push_str(&format!("Searching for: {:?}", needle ));
             }
             Rule::backspace => {
