@@ -32,14 +32,15 @@ use pest_derive::*;
 #[grammar = "cmd.pest"]
 struct CmdParser;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Default)]
 pub enum CursorSelects {
+    #[default]
     LeftNibble,
     RightNibble,
     AsciiChar,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct CursorState {
     pos: usize,
     sel: CursorSelects,
@@ -57,10 +58,7 @@ fn main() -> Result<(), Error> {
     let args = Args::parse();
 
     let mut buf = Vec::new();
-    let mut cursor = CursorState {
-        pos: 0,
-        sel: CursorSelects::LeftNibble,
-    };
+    let mut cursor = CursorState::default();
     // 0 = display data from first line of file
     let mut screenoffset: usize = 0;
     const COLS: usize = 16;
