@@ -203,8 +203,8 @@ fn main() -> Result<(), Error> {
             Rule::dd => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
                 if cursor.pos() < buf.len() {
-                    let startofline = cursor.pos() - cursor.pos() % COLS;
-                    let mut endofline = cursor.pos() - (cursor.pos() % COLS) + (COLS * amount);
+                    let startofline = cursor.calculate_start_of_line(COLS);
+                    let mut endofline = startofline + (COLS * amount);
                     endofline = cmp::min(endofline, buf.len());
                     buf.drain(startofline..endofline);
                     if cursor.pos() >= buf.len() {
