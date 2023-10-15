@@ -36,6 +36,9 @@ struct Args {
     // This is always required for now, as we have no commands to load a file
     #[clap(required = true, value_parser)]
     filename: PathBuf,
+    /// Load commands via argument (E.g.: --autoparse=$'jjxx:q\r' )
+    #[clap(short, long, default_value = "")]
+    autoparse: String,
 }
 
 fn main() -> Result<(), Error> {
@@ -48,7 +51,7 @@ fn main() -> Result<(), Error> {
     const COLS: usize = 16;
     let mut command = String::new();
     let mut lastcommand = String::new();
-    let mut autoparse = String::new();
+    let mut autoparse = args.autoparse;
     let mut infoline = String::new();
 
     let screensize = crossterm::terminal::size()?;
