@@ -76,4 +76,18 @@ impl Cursor {
         self.pos = self.calculate_end_of_line(columns);
         self.trim_to_max_minus_one(upperlimit);
     }
+    pub fn jump_to_line(&mut self, line: usize, columns: usize, upperlimit: usize) {
+        self.set_pos(line * columns);
+        self.trim_to_max_minus_one(upperlimit);
+    }
+    pub fn jump_to_pos_on_line(
+        &mut self,
+        line: usize,
+        pos_on_line: usize,
+        columns: usize,
+        upperlimit: usize,
+    ) {
+        self.set_pos(line * columns + pos_on_line);
+        self.trim_to_max_minus_one(upperlimit);
+    }
 }

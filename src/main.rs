@@ -147,8 +147,7 @@ fn main() -> Result<(), Error> {
             Rule::bottom => {
                 let pos_on_line = cursor.calculate_pos_on_line(COLS);
                 let line = buf.len().saturating_sub(1) / COLS;
-                cursor.set_pos(line * COLS + pos_on_line);
-                cursor.trim_to_max_minus_one(buf.len());
+                cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
             }
             Rule::replace => {
                 clear = false;
@@ -253,9 +252,8 @@ fn main() -> Result<(), Error> {
                 autoparse = lastcommand.clone();
             }
             Rule::gg => {
-                let linenr: usize = cmd.as_str().parse().unwrap_or(0);
-                cursor.set_pos(linenr * COLS); // jump to the line
-                cursor.trim_to_max_minus_one(buf.len());
+                let line: usize = cmd.as_str().parse().unwrap_or(0);
+                cursor.jump_to_line(line, COLS, buf.len());
                 clear = true;
             }
             Rule::searchend => {
