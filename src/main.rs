@@ -198,9 +198,7 @@ fn main() -> Result<(), Error> {
                     let mut endofline = startofline + (COLS * amount);
                     endofline = cmp::min(endofline, buf.len());
                     buf.drain(startofline..endofline);
-                    if cursor.pos() >= buf.len() {
-                        cursor.set_pos(buf.len().saturating_sub(1));
-                    }
+                    cursor.trim_to_max_minus_one(buf.len());
                 }
                 lastcommand = command.clone();
                 clear = true;
@@ -257,11 +255,7 @@ fn main() -> Result<(), Error> {
             Rule::gg => {
                 let linenr: usize = cmd.as_str().parse().unwrap_or(0);
                 cursor.set_pos(linenr * COLS); // jump to the line
-                if cursor.pos() > buf.len() {
-                    // detect file end
-                    cursor.set_pos(buf.len());
-                }
-                cursor.jump_to_start_of_line(COLS);
+                cursor.trim_to_max_minus_one(buf.len());
                 clear = true;
             }
             Rule::searchend => {
