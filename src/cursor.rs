@@ -1,4 +1,4 @@
-#[derive(PartialEq, Copy, Clone, Default)]
+#[derive(PartialEq, Copy, Clone, Default, Debug)]
 pub enum CursorSelects {
     #[default]
     LeftNibble,
@@ -90,4 +90,46 @@ impl Cursor {
         self.set_pos(line * columns + pos_on_line);
         self.trim_to_max_minus_one(upperlimit);
     }
+}
+
+#[test]
+fn cursor_default() {
+    let cursor = Cursor::default();
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_jump_to_start_of_line() {
+    // Assuming the column width is COLS
+    const COLS: usize = 16;
+    // Create data from 0 to 19 as test data
+    let buf: Vec<u8> = (0..20).collect();
+    // Cursor by defaults points to the first element
+    let mut cursor = Cursor::default();
+    // Select the last element
+    cursor.pos = buf.len().saturating_sub(1);
+    assert_eq!(cursor.pos, 19);
+    cursor.jump_to_start_of_line(COLS);
+    assert_eq!(cursor.pos, 16);
+    // Go to the last element of the first line
+    cursor.sub(1, 0);
+    cursor.jump_to_start_of_line(COLS);
+    assert_eq!(cursor.pos, 0);
+}
+#[test]
+fn cursor_jump_to_end_of_line() {
+    // Assuming the column width is COLS
+    const COLS: usize = 16;
+    // Create data from 0 to 19 as test data
+    let buf: Vec<u8> = (0..20).collect();
+    // Cursor by defaults points to the first element
+    let mut cursor = Cursor::default();
+    // Since the line is COLS wide, end of line is 15
+    cursor.jump_to_end_of_line(COLS, buf.len());
+    assert_eq!(cursor.pos, 15);
+    // Go to the first element of the next line
+    cursor.add(1, buf.len());
+    println!("{:?}", buf.len());
+    cursor.jump_to_end_of_line(COLS, buf.len());
+    assert_eq!(cursor.pos, 19);
 }
