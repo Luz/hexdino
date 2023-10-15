@@ -226,11 +226,11 @@ fn main() -> Result<(), Error> {
                     if let Some(c) = key.to_digit(16) {
                         buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | c as u8;
                         cursor.select_left_nibble();
-                        cursor.set_pos(cursor.pos() + 1);
+                        cursor.add(1, buf.len());
                     }
                 } else if cursor.is_over_ascii() {
                     buf.insert(cursor.pos(), key as u8);
-                    cursor.set_pos(cursor.pos() + 1);
+                    cursor.add(1, buf.len());
                 }
 
                 clear = false;
