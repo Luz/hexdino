@@ -152,8 +152,10 @@ fn main() -> Result<(), Error> {
                 }
             }
             Rule::bottom => {
-                cursor.set_pos(buf.len().saturating_sub(1));
-                cursor.jump_to_start_of_line(COLS);
+                let pos_on_line = cursor.calculate_pos_on_line(COLS);
+                let line = buf.len().saturating_sub(1) / COLS;
+                cursor.set_pos(line * COLS + pos_on_line);
+                cursor.trim_to_max_minus_one(buf.len());
             }
             Rule::replace => {
                 clear = false;
