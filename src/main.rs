@@ -210,20 +210,22 @@ fn main() -> Result<(), Error> {
                 let key = command.chars().last().unwrap_or('x');
 
                 if cursor.is_over_left_nibble() {
-                    // Left nibble
                     if let Some(c) = key.to_digit(16) {
                         buf.insert(cursor.pos(), (c as u8) << 4);
                         cursor.select_right_nibble();
                     }
                 } else if cursor.is_over_right_nibble() {
-                    // Right nibble
+                    // This if checks if we are out of range already
                     if cursor.pos() == buf.len() {
+                        // Then just insert some data
                         buf.insert(cursor.pos(), 0);
                     }
                     if let Some(c) = key.to_digit(16) {
                         buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | c as u8;
                         cursor.select_left_nibble();
-                        cursor.add(1, buf.len());
+                        // WARNING: This puts the cursor out of range intentionally!
+                        cursor.set_pos(cursor.pos() + 1);
+                        // Do not use: cursor.add(1, buf.len());
                     }
                 } else if cursor.is_over_ascii() {
                     buf.insert(cursor.pos(), key as u8);
