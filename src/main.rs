@@ -139,14 +139,7 @@ fn main() -> Result<(), Error> {
                 }
             }
             Rule::end => {
-                // check if no overflow
-                if cursor.pos() - (cursor.pos() % COLS) + (COLS - 1) < buf.len() {
-                    // jump to end of line
-                    cursor.set_pos(cursor.pos() - (cursor.pos() % COLS) + (COLS - 1));
-                } else {
-                    // jump to end of line
-                    cursor.set_pos(buf.len().saturating_sub(1));
-                }
+                cursor.jump_to_end_of_line(COLS, buf.len());
                 if cursor.is_over_left_nibble() {
                     cursor.select_right_nibble();
                 }

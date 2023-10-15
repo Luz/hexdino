@@ -66,7 +66,14 @@ impl Cursor {
     pub fn calculate_start_of_line(&self, columns: usize) -> usize {
         self.pos - self.calculate_pos_on_line(columns)
     }
+    pub fn calculate_end_of_line(&self, columns: usize) -> usize {
+        self.calculate_start_of_line(columns) + (columns - 1)
+    }
     pub fn jump_to_start_of_line(&mut self, columns: usize) {
         self.pos = self.calculate_start_of_line(columns);
+    }
+    pub fn jump_to_end_of_line(&mut self, columns: usize, upperlimit: usize) {
+        self.pos = self.calculate_end_of_line(columns);
+        self.trim_to_max_minus_one(upperlimit);
     }
 }
