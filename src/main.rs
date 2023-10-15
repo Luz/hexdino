@@ -223,13 +223,15 @@ fn main() -> Result<(), Error> {
                     if let Some(c) = key.to_digit(16) {
                         buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | c as u8;
                         cursor.select_left_nibble();
-                        // WARNING: This puts the cursor out of range intentionally!
-                        cursor.set_pos(cursor.pos() + 1);
-                        // Do not use: cursor.add(1, buf.len());
+                        // This puts the cursor out of range intentionally,
+                        // inserting nibbles would feel strange otherwise.
+                        cursor.add(1, buf.len() + 1);
                     }
                 } else if cursor.is_over_ascii() {
                     buf.insert(cursor.pos(), key as u8);
-                    cursor.add(1, buf.len());
+                    // This puts the cursor out of range intentionally,
+                    // this is probably later used by the command 'a'
+                    cursor.add(1, buf.len() + 1);
                 }
 
                 clear = false;
