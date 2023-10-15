@@ -101,53 +101,39 @@ fn main() -> Result<(), Error> {
 
         match cmd.as_rule() {
             Rule::down => {
-                if cursor.pos() + COLS < buf.len() {
-                    // not at end
-                    cursor.set_pos(cursor.pos() + COLS);
-                } else {
-                    // when at end
-                    cursor.set_pos(buf.len().saturating_sub(1));
-                }
+                cursor.add(COLS, buf.len());
             }
             Rule::up => {
-                if cursor.pos() >= COLS {
-                    cursor.set_pos(cursor.pos() - COLS);
-                }
+                cursor.sub(COLS, 0);
             }
             Rule::left => {
                 if cursor.is_over_ascii() {
-                    if cursor.pos() >= 1 {
-                        cursor.set_pos(cursor.pos() - 1);
-                    }
+                    cursor.sub(1, 0);
                 } else if cursor.is_over_right_nibble() {
                     cursor.select_left_nibble();
                 } else if cursor.is_over_left_nibble() {
                     if cursor.pos() >= 1 {
                         // not at start
                         cursor.select_right_nibble();
-                        cursor.set_pos(cursor.pos() - 1);
                     }
+                    cursor.sub(1, 0);
                 }
             }
             Rule::right => {
                 if cursor.is_over_ascii() {
-                    if cursor.pos() + 1 < buf.len() {
-                        // not at end
-                        cursor.set_pos(cursor.pos() + 1);
-                    }
+                    cursor.add(1, buf.len());
                 } else if cursor.is_over_left_nibble() {
                     cursor.select_right_nibble();
                 } else if cursor.is_over_right_nibble() {
-                    if cursor.pos() + 1 < buf.len() {
+                    if cursor.pos() < buf.len().saturating_sub(1) {
                         // not at end
                         cursor.select_left_nibble();
-                        cursor.set_pos(cursor.pos() + 1);
                     }
+                    cursor.add(1, buf.len());
                 }
             }
             Rule::start => {
-                // jump to start of line
-                cursor.set_pos(cursor.pos() - cursor.pos() % COLS);
+                cursor.jump_to_start_of_line(COLS);
                 if cursor.is_over_right_nibble() {
                     cursor.select_left_nibble();
                 }
@@ -167,8 +153,7 @@ fn main() -> Result<(), Error> {
             }
             Rule::bottom => {
                 cursor.set_pos(buf.len().saturating_sub(1));
-                // jump to start of line
-                cursor.set_pos(cursor.pos() - cursor.pos() % COLS);
+                cursor.jump_to_start_of_line(COLS);
             }
             Rule::replace => {
                 clear = false;
@@ -283,8 +268,7 @@ fn main() -> Result<(), Error> {
                     // detect file end
                     cursor.set_pos(buf.len());
                 }
-                // jump to start of line:
-                cursor.set_pos(cursor.pos() - cursor.pos() % COLS);
+                cursor.jump_to_start_of_line(COLS);
                 clear = true;
             }
             Rule::searchend => {
