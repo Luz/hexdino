@@ -194,10 +194,8 @@ fn main() -> Result<(), Error> {
                     // remove the current char
                     buf.remove(cursor.pos());
                 }
-                // Move left if cursor is currently out of data
-                if cursor.pos() >= buf.len() {
-                    cursor.set_pos(cursor.pos().saturating_sub(1));
-                }
+                // Move cursor if it is out of data
+                cursor.trim_to_max_minus_one(buf.len());
                 lastcommand = command.clone();
             }
             Rule::dd => {
