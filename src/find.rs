@@ -2,6 +2,9 @@
 // Requires two nibbles per byte.
 // All values above 0x0F will be used as wildcard.
 // Example: Use x or X as wildcard for a nibble.
+// If it is not divisible by two, then the behaviour should
+// be like if there would be a wildcard appended at the end.
+// Example: Searching for 1F1 makes the needle kind of 1F1X
 
 pub trait FindOptSubset {
     fn find_subset(&self, subset: &[u8]) -> Option<usize>;
