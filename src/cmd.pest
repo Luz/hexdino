@@ -16,11 +16,11 @@ insert			= { "i" }
 insertstuff		= { &insert ~ ANY ~ (anything_but_escape)+ }
 insertend		= { &insert ~ ANY ~ (anything_but_escape)* ~ escape_char }
 jumpascii		= { "J" }
-helpfile		= { "?" }
+querry			= { "?" }
 repeat			= { "." }
 gg			= { ASCII_DIGIT* ~ &"gg" }
 
-quickstuffescaped	= _{ replaceend | replacement | replace | insertend | insertstuff | insert | remove | dd | jumpascii | helpfile | repeat | gg }
+quickstuffescaped	= _{ replaceend | replacement | replace | insertend | insertstuff | insert | remove | dd | jumpascii | querry | repeat | gg }
 
 search			= { "/" }
 searchstr		= { (!(escape_char | NEWLINE) ~ ANY)* }

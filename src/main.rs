@@ -251,10 +251,9 @@ fn main() -> Result<(), Error> {
                     cursor.select_ascii();
                 }
             }
-            Rule::helpfile => {
-                command.pop();
-                command.push_str("No helpfile yet");
-                clear = false;
+            Rule::querry => {
+                // Most likely will be changed later
+                infotext.push_str(&format!("Current byte marked: {}", cursor.pos()));
             }
             Rule::repeat => {
                 autoparse = lastcommand.clone();
