@@ -6,11 +6,11 @@
 // be like if there would be a wildcard appended at the end.
 // Example: Searching for 1F1 makes the needle kind of 1F1X
 
-pub trait FindOptSubset {
+pub trait Search {
     fn search(&self, subset: &[u8]) -> Option<usize>;
 }
 
-impl FindOptSubset for Vec<u8> {
+impl Search for Vec<u8> {
     fn search(&self, subset: &[u8]) -> Option<usize> {
         if subset.len() > 2 * self.len() {
             return None;
@@ -44,43 +44,43 @@ impl FindOptSubset for Vec<u8> {
 }
 
 #[test]
-fn find_partial_at_start() {
+fn search_partial_at_start() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x01];
     assert_eq!(buf.search(&sub), Some(0));
 }
 #[test]
-fn find_partial_at_middle() {
+fn search_partial_at_middle() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x03, 0x00, 0x04];
     assert_eq!(buf.search(&sub), Some(2));
 }
 #[test]
-fn find_partial_at_end() {
+fn search_partial_at_end() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x04, 0x00, 0x05];
     assert_eq!(buf.search(&sub), Some(3));
 }
 #[test]
-fn find_partial_after_end() {
+fn search_partial_after_end() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x05, 0x00, 0x06];
     assert_eq!(buf.search(&sub), None);
 }
 #[test]
-fn find_partial_before_start() {
+fn search_partial_before_start() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x00, 0x00, 0x01];
     assert_eq!(buf.search(&sub), None);
 }
 #[test]
-fn find_short() {
+fn search_short() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x02];
     assert_eq!(buf.search(&sub), Some(1));
 }
 #[test]
-fn find_too_long() {
+fn search_too_long() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![
         0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05, 0x00, 0x06,
@@ -88,91 +88,91 @@ fn find_too_long() {
     assert_eq!(buf.search(&sub), None);
 }
 #[test]
-fn find_full() {
+fn search_full() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05];
     assert_eq!(buf.search(&sub), Some(0));
 }
 #[test]
-fn find_swapped() {
+fn search_swapped() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x05, 0x00, 0x04, 0x00, 0x03, 0x00, 0x02, 0x00, 0x01];
     assert_eq!(buf.search(&sub), None);
 }
 #[test]
-fn find_higher_than_9() {
+fn search_higher_than_9() {
     let buf = vec![0x0A, 0x0C, 0x0D, 0x0E, 0x0F];
     let sub = vec![0x00, 0x0C, 0x00, 0x0D, 0x00, 0x0E];
     assert_eq!(buf.search(&sub), Some(1));
 }
 #[test]
-fn find_higher_than_f() {
+fn search_higher_than_f() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x03, 0x0C, 0x01, 0x0D, 0x0E, 0x0E];
     assert_eq!(buf.search(&sub), Some(1));
 }
 #[test]
-fn find_with_single_wildcard_0x10() {
+fn search_with_single_wildcard_0x10() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x03, 0x0C, 0x01, 0x10, 0x0E, 0x0E];
     assert_eq!(buf.search(&sub), Some(1));
 }
 #[test]
-fn find_with_wildcard_0xf0() {
+fn search_with_wildcard_0xf0() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x03, 0x0C, 0xF0, 0xF0, 0x0E, 0x0E];
     assert_eq!(buf.search(&sub), Some(1));
 }
 #[test]
-fn find_with_wildcard_x_big_x() {
+fn search_with_wildcard_x_big_x() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x03, 0x0C, 'x' as u8, 'X' as u8, 0x0E, 0x0E];
     assert_eq!(buf.search(&sub), Some(1));
 }
 #[test]
-fn find_with_wildcards() {
+fn search_with_wildcards() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x10, 0x10, 0x10, 0x10, 0x10, 0x10];
     assert_eq!(buf.search(&sub), Some(0));
 }
 #[test]
-fn find_shifted() {
+fn search_shifted() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x0A, 0x03];
     assert_eq!(buf.search(&sub), None);
 }
 #[test]
-fn find_odd_at_start_left() {
+fn search_odd_at_start_left() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x01, 0x00];
     assert_eq!(buf.search(&sub), Some(0));
 }
 #[test]
-fn find_odd_at_middle_left() {
+fn search_odd_at_middle_left() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x03, 0x00];
     assert_eq!(buf.search(&sub), Some(2));
 }
 #[test]
-fn find_odd_at_end_left() {
+fn search_odd_at_end_left() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x00, 0x04, 0x00];
     assert_eq!(buf.search(&sub), Some(3));
 }
 #[test]
-fn find_odd_at_start_right() {
+fn search_odd_at_start_right() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x01, 0x00, 0x02];
     assert_eq!(buf.search(&sub), None);
 }
 #[test]
-fn find_odd_at_middle_right() {
+fn search_odd_at_middle_right() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x02, 0x00, 0x03];
     assert_eq!(buf.search(&sub), None);
 }
 #[test]
-fn find_odd_at_end_right() {
+fn search_odd_at_end_right() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x03, 0x00, 0x04];
     assert_eq!(buf.search(&sub), None);

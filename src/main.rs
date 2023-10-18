@@ -13,8 +13,9 @@ use std::path::{Path, PathBuf};
 mod draw;
 use draw::draw;
 
-mod find;
-use find::*;
+mod search;
+use search::*;
+
 use memmem::{Searcher, TwoWaySearcher};
 
 use crossterm::event::{read, Event};
