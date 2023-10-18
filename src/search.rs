@@ -15,27 +15,42 @@ impl Search for Vec<u8> {
         if needle.len() > 2 * self.len() {
             return None;
         }
-        // Search in a for b
-        for a in 0..=self.len() - (needle.len() + 1) / 2 {
-            for b in 0..needle.len() / 2 {
-                // if b is not a, skip searching at that position in a
-                // Logic: both match, ...
-                // or first nibble matches when second nibble is wildcard,
-                // or second nibble matches when first nibble is wildcard.
-                // or two wildcards at that position.
-                #![cfg_attr(rustfmt, rustfmt_skip)]
-                if !(
-                    ((needle[2*b  ] == self[a + b]>>4) && (needle[2*b+1] == self[a + b]%16)) ||
-                    ((needle[2*b  ] == self[a + b]>>4) && (needle[2*b+1] >= 0x10)) ||
-                    ((needle[2*b+1] == self[a + b]%16) && (needle[2*b  ] >= 0x10)) ||
-                    ((needle[2*b+1] >= 0x10) && (needle[2*b  ] >= 0x10))
-                   )
-                {
-                    break; // element does not match
+
+        let needle_bytes_odd: bool = needle.len() % 2 == 1;
+        let mut bytes_needed_to_match = needle.len() / 2;
+        if needle_bytes_odd {
+            bytes_needed_to_match += 1;
+            // As we add the wildcard to make it even again
+        }
+
+        // Search in h (haystack index) for n (needle index)
+        for h in 0..=self.len().saturating_sub(bytes_needed_to_match) {
+            for n in 0..bytes_needed_to_match {
+                // needle_left_nibble
+                let nl = needle[2 * n];
+                // needle_right_nibble
+                let mut nr = 0x10; // Use the wildcard if it goes out of range
+                if 2 * n + 1 < needle.len() {
+                    // Ensuring no out of range access
+                    nr = needle[2 * n + 1];
                 }
-                // when all elements of b match in a, return position of a
-                if b == needle.len() / 2 - 1 {
-                    return Some(a);
+
+                // haystack_left_nibble
+                let hl = self[h + n] >> 4;
+                // haystack_right_nibble
+                let hr = self[h + n] % 16;
+
+                // When left nibble does not match and it is not a wildcard
+                if nl != hl && nl < 0x10 {
+                    break; // skip as left nibble is not a wildcard and it does not match
+                }
+                if nr != hr && nr < 0x10 {
+                    break; // skip as right nibble is not a wildcard and it does not match
+                }
+                // when all elements of n match in h
+                if n + 1 == bytes_needed_to_match {
+                    // return position of h
+                    return Some(h);
                 }
             }
         }
@@ -159,8 +174,6 @@ fn search_odd_at_end_left() {
     let sub = vec![0x00, 0x04, 0x00];
     assert_eq!(buf.search(&sub), Some(3));
 }
-// TODO: We should fix the code if possible
-#[ignore]
 #[test]
 fn search_odd_at_end_left_1() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
