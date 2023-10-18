@@ -182,10 +182,9 @@ fn main() -> Result<(), Error> {
                     }
                 }
                 lastcommand = command.clone();
-                clear = true;
             }
             Rule::replaceend => {
-                clear = true;
+                // infotext.push_str("Replacing canceled");
             }
             Rule::remove => {
                 // check if in valid range
@@ -207,7 +206,6 @@ fn main() -> Result<(), Error> {
                     cursor.trim_to_max_minus_one(buf.len());
                 }
                 lastcommand = command.clone();
-                clear = true;
             }
             Rule::insert => {
                 // The next chars will be inserted
@@ -245,7 +243,6 @@ fn main() -> Result<(), Error> {
             }
             Rule::insertend => {
                 lastcommand = command.clone();
-                clear = true;
             }
             Rule::jumpascii => {
                 if cursor.is_over_ascii() {
@@ -265,14 +262,12 @@ fn main() -> Result<(), Error> {
             Rule::gg => {
                 let line: usize = cmd.as_str().parse().unwrap_or(0);
                 cursor.jump_to_line(line, COLS, buf.len());
-                clear = true;
             }
             Rule::searchend => {
                 let searchstr = cmd.clone().into_inner().as_str();
                 let search = searchstr.as_bytes();
                 let foundpos = TwoWaySearcher::new(&search);
                 cursor.set_pos(foundpos.search_in(&buf).unwrap_or(cursor.pos()));
-                clear = true;
             }
             Rule::hexsearchend => {
                 let searchbytes = cmd.clone().into_inner().as_str();
