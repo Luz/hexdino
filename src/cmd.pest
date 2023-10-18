@@ -26,8 +26,7 @@ search			= { "/" }
 searchstr		= { (!(escape_char | NEWLINE) ~ ANY)* }
 searchend		= { &search ~ ANY ~ searchstr ~ NEWLINE }
 hex_digit		= @{ ASCII_HEX_DIGIT | 'x'..'x' | 'X'..'X' }
-searchbytes		= { ( hex_digit{2} )* }
-hexsearchend		= { &search ~ ANY ~ searchbytes ~ NEWLINE }
+hexsearchend		= { &search ~ ANY ~ hex_digit* ~ NEWLINE }
 quickstuff		= _{ hexsearchend | searchend }
 
 saveandexit		= { (":" ~ ("wq!" | "wq") ~ NEWLINE) | "ZZ" } // careful, notice priority
