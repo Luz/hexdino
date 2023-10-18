@@ -23,7 +23,7 @@ pub fn draw(
     total_buf: &[u8],
     cols: usize,
     command: &String,
-    infoline: &mut String,
+    infotext: &mut String,
     cursor: Cursor,
     screenoffset: usize,
 ) -> Result<(), Error> {
@@ -111,9 +111,9 @@ pub fn draw(
         queue!(out, Print("\n"))?;
     }
     queue!(out, Print(command))?;
-    if !infoline.is_empty() {
+    if !infotext.is_empty() {
         queue!(out, Print(" ("))?;
-        queue!(out, Print(infoline))?;
+        queue!(out, Print(infotext))?;
         queue!(out, Print(")"))?;
     }
     out.flush()?;

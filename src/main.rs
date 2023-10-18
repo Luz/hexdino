@@ -52,7 +52,7 @@ fn main() -> Result<(), Error> {
     let mut command = String::new();
     let mut lastcommand = String::new();
     let mut autoparse = args.autoparse;
-    let mut infoline = String::new();
+    let mut infotext = String::new();
 
     let screensize = crossterm::terminal::size()?;
     let screenheight: usize = screensize.1 as usize;
@@ -69,7 +69,7 @@ fn main() -> Result<(), Error> {
     file.read_to_end(&mut buf).expect("File could not be read.");
 
     enable_raw_mode()?;
-    draw(&buf, COLS, &command, &mut infoline, cursor, screenoffset)?;
+    draw(&buf, COLS, &command, &mut infotext, cursor, screenoffset)?;
 
     let mut quitnow = false;
     while quitnow == false {
@@ -286,7 +286,7 @@ fn main() -> Result<(), Error> {
                     needle.push(nibble);
                 }
                 cursor.set_pos(buf.find_subset(&needle).unwrap_or(cursor.pos()));
-                // infoline.push_str(&format!("Searching for: {:?}", needle ));
+                // infotext.push_str(&format!("Searching for: {:?}", needle ));
             }
             Rule::backspace => {
                 command.pop();
@@ -339,7 +339,7 @@ fn main() -> Result<(), Error> {
             screenoffset = cursor.pos() / COLS;
         }
 
-        draw(&buf, COLS, &command, &mut infoline, cursor, screenoffset)?;
+        draw(&buf, COLS, &command, &mut infotext, cursor, screenoffset)?;
     }
 
     disable_raw_mode()?;
