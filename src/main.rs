@@ -264,28 +264,43 @@ fn main() -> Result<(), Error> {
                 cursor.jump_to_line(line, COLS, buf.len());
             }
             Rule::searchend => {
-                let searchstr = cmd.clone().into_inner().as_str();
-                let search = searchstr.as_bytes();
-                let foundpos = TwoWaySearcher::new(&search);
-                cursor.set_pos(foundpos.search_in(&buf).unwrap_or(cursor.pos()));
+                if cursor.is_over_ascii() {
+                    let searchstr = cmd.clone().into_inner().as_str();
+                    let search = searchstr.as_bytes();
+                    let foundpos = TwoWaySearcher::new(&search);
+                    // TODO add info if not found
+                    cursor.set_pos(foundpos.search_in(&buf).unwrap_or(cursor.pos()));
+                } else {
+                    infotext.push_str("Ascii-search works, when the cursor is over ascii");
+                    command.pop();
+                    clear = false;
+                }
             }
             Rule::hexsearchend => {
-                let searchbytes = cmd.clone().into_inner().as_str();
-                let search = searchbytes.as_bytes();
-                let mut needle = vec![];
-                for i in 0..search.len() {
-                    let nibble = match search[i] as u8 {
-                        c @ 48..=57 => c - 48, // Numbers from 0 to 9
-                        b'x' => 0x10,          // x is the wildcard
-                        b'X' => 0x10,          // X is the wildcard
-                        c @ b'a'..=b'f' => c - 87,
-                        c @ b'A'..=b'F' => c - 55,
-                        _ => panic!("Should not get to this position!"),
-                    };
-                    needle.push(nibble);
+                if cursor.is_over_ascii() {
+                    let searchstr = cmd.clone().into_inner().as_str();
+                    let search = searchstr.as_bytes();
+                    let foundpos = TwoWaySearcher::new(&search);
+                    // TODO add info if not found
+                    cursor.set_pos(foundpos.search_in(&buf).unwrap_or(cursor.pos()));
+                } else {
+                    let searchbytes = cmd.clone().into_inner().as_str();
+                    let search = searchbytes.as_bytes();
+                    let mut needle = vec![];
+                    for i in 0..search.len() {
+                        let nibble = match search[i] as u8 {
+                            c @ 48..=57 => c - 48, // Numbers from 0 to 9
+                            b'x' => 0x10,          // x is the wildcard
+                            b'X' => 0x10,          // X is the wildcard
+                            c @ b'a'..=b'f' => c - 87,
+                            c @ b'A'..=b'F' => c - 55,
+                            _ => panic!("Should not get to this position!"),
+                        };
+                        needle.push(nibble);
+                    }
+                    cursor.set_pos(buf.search(&needle).unwrap_or(cursor.pos()));
+                    // infotext.push_str(&format!("searched for {:?}", needle));
                 }
-                cursor.set_pos(buf.search(&needle).unwrap_or(cursor.pos()));
-                // infotext.push_str(&format!("Searching for: {:?}", needle ));
             }
             Rule::backspace => {
                 command.pop();
