@@ -16,7 +16,7 @@ impl Search for Vec<u8> {
             return None;
         }
         // Search in a for b
-        for a in 0..self.len() - subset.len() / 2 + 1 {
+        for a in 0..=self.len() - (subset.len() + 1) / 2 {
             for b in 0..subset.len() / 2 {
                 // if b is not a, skip searching at that position in a
                 // Logic: both match, ...
@@ -159,6 +159,14 @@ fn search_odd_at_end_left() {
     let sub = vec![0x00, 0x04, 0x00];
     assert_eq!(buf.search(&sub), Some(3));
 }
+// TODO: We should fix the code if possible
+#[ignore]
+#[test]
+fn search_odd_at_end_left_1() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x00, 0x04, 0x01];
+    assert_eq!(buf.search(&sub), None);
+}
 #[test]
 fn search_odd_at_start_right() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
@@ -176,4 +184,24 @@ fn search_odd_at_end_right() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
     let sub = vec![0x03, 0x00, 0x04];
     assert_eq!(buf.search(&sub), None);
+}
+#[test]
+fn search_odd_at_end_left_over_range_0() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x00, 0x05, 0x00];
+    assert_eq!(buf.search(&sub), None);
+}
+#[test]
+fn search_odd_at_end_left_over_range_1() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x00, 0x05, 0x01];
+    assert_eq!(buf.search(&sub), None);
+}
+// The last test needs to work only when the others work:
+#[ignore]
+#[test]
+fn search_odd_at_end_left_over_range_x() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x00, 0x05, 0x10];
+    assert_eq!(buf.search(&sub), Some(4));
 }
