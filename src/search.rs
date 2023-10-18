@@ -19,13 +19,21 @@ impl Search for Vec<u8> {
         let needle_bytes_odd: bool = needle.len() % 2 == 1;
         let mut bytes_needed_to_match = needle.len() / 2;
         if needle_bytes_odd {
-            bytes_needed_to_match += 1;
-            // As we add the wildcard to make it even again
+            bytes_needed_to_match += 1; // As we add the wildcard to make it even again
+            if needle.last().unwrap_or(&0).clone() >= 0x10 {
+                // This fixes the rare case when a user:
+                // - uses an odd amount of nibbles to search
+                // - ends his 3 nibbles with a wildcard character
+                // - wants the 2 nibbles to match on the last character of the haystack
+                // See: search_odd_at_end_left_over_range_x()
+                bytes_needed_to_match -= 1;
+            }
         }
 
         // Search in h (haystack index) for n (needle index)
         for h in 0..=self.len().saturating_sub(bytes_needed_to_match) {
             for n in 0..bytes_needed_to_match {
+                // println!("h={}, n={}", h, n);
                 // needle_left_nibble
                 let nl = needle[2 * n];
                 // needle_right_nibble
@@ -210,8 +218,6 @@ fn search_odd_at_end_left_over_range_1() {
     let sub = vec![0x00, 0x05, 0x01];
     assert_eq!(buf.search(&sub), None);
 }
-// The last test needs to work only when the others work:
-#[ignore]
 #[test]
 fn search_odd_at_end_left_over_range_x() {
     let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
