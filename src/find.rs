@@ -12,10 +12,6 @@ impl FindOptSubset for Vec<u8> {
         if subset.len() > 2 * self.len() {
             return None;
         }
-        if subset.len() % 2 != 0 {
-            // Must be dividable by two
-            return None;
-        }
         // Search in a for b
         for a in 0..self.len() - subset.len() / 2 + 1 {
             for b in 0..subset.len() / 2 {
@@ -140,5 +136,41 @@ fn find_with_wildcards() {
 fn find_shifted() {
     let buf = vec![0x0A, 0x3C, 0x1D, 0xEE, 0x0F];
     let sub = vec![0x0A, 0x03];
+    assert_eq!(buf.find_subset(&sub), None);
+}
+#[test]
+fn find_odd_at_start_left() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x00, 0x01, 0x00];
+    assert_eq!(buf.find_subset(&sub), Some(0));
+}
+#[test]
+fn find_odd_at_middle_left() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x00, 0x03, 0x00];
+    assert_eq!(buf.find_subset(&sub), Some(2));
+}
+#[test]
+fn find_odd_at_end_left() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x00, 0x04, 0x00];
+    assert_eq!(buf.find_subset(&sub), Some(3));
+}
+#[test]
+fn find_odd_at_start_right() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x01, 0x00, 0x02];
+    assert_eq!(buf.find_subset(&sub), None);
+}
+#[test]
+fn find_odd_at_middle_right() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x02, 0x00, 0x03];
+    assert_eq!(buf.find_subset(&sub), None);
+}
+#[test]
+fn find_odd_at_end_right() {
+    let buf = vec![0x01, 0x02, 0x03, 0x04, 0x05];
+    let sub = vec![0x03, 0x00, 0x04];
     assert_eq!(buf.find_subset(&sub), None);
 }
