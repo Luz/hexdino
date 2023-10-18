@@ -111,7 +111,11 @@ pub fn draw(
         queue!(out, Print("\n"))?;
     }
     queue!(out, Print(command))?;
-    queue!(out, Print(infoline))?;
+    if !infoline.is_empty() {
+        queue!(out, Print(" ("))?;
+        queue!(out, Print(infoline))?;
+        queue!(out, Print(")"))?;
+    }
     out.flush()?;
     Ok(())
 }
