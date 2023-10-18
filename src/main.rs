@@ -102,6 +102,9 @@ fn main() -> Result<(), Error> {
         let mut clear = true;
         let mut save = false;
 
+        // Info can always be cleared as soon as there is a new input
+        infotext.clear();
+
         match cmd.as_rule() {
             Rule::down => {
                 cursor.add(COLS, buf.len());
