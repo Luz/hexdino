@@ -7,17 +7,17 @@
 // Example: Searching for 1F1 makes the needle kind of 1F1X
 
 pub trait Search {
-    fn search(&self, subset: &[u8]) -> Option<usize>;
+    fn search(&self, needle: &[u8]) -> Option<usize>;
 }
 
 impl Search for Vec<u8> {
-    fn search(&self, subset: &[u8]) -> Option<usize> {
-        if subset.len() > 2 * self.len() {
+    fn search(&self, needle: &[u8]) -> Option<usize> {
+        if needle.len() > 2 * self.len() {
             return None;
         }
         // Search in a for b
-        for a in 0..=self.len() - (subset.len() + 1) / 2 {
-            for b in 0..subset.len() / 2 {
+        for a in 0..=self.len() - (needle.len() + 1) / 2 {
+            for b in 0..needle.len() / 2 {
                 // if b is not a, skip searching at that position in a
                 // Logic: both match, ...
                 // or first nibble matches when second nibble is wildcard,
@@ -25,16 +25,16 @@ impl Search for Vec<u8> {
                 // or two wildcards at that position.
                 #![cfg_attr(rustfmt, rustfmt_skip)]
                 if !(
-                    ((subset[2*b  ] == self[a + b]>>4) && (subset[2*b+1] == self[a + b]%16)) ||
-                    ((subset[2*b  ] == self[a + b]>>4) && (subset[2*b+1] >= 0x10)) ||
-                    ((subset[2*b+1] == self[a + b]%16) && (subset[2*b  ] >= 0x10)) ||
-                    ((subset[2*b+1] >= 0x10) && (subset[2*b  ] >= 0x10))
+                    ((needle[2*b  ] == self[a + b]>>4) && (needle[2*b+1] == self[a + b]%16)) ||
+                    ((needle[2*b  ] == self[a + b]>>4) && (needle[2*b+1] >= 0x10)) ||
+                    ((needle[2*b+1] == self[a + b]%16) && (needle[2*b  ] >= 0x10)) ||
+                    ((needle[2*b+1] >= 0x10) && (needle[2*b  ] >= 0x10))
                    )
                 {
                     break; // element does not match
                 }
                 // when all elements of b match in a, return position of a
-                if b == subset.len() / 2 - 1 {
+                if b == needle.len() / 2 - 1 {
                     return Some(a);
                 }
             }
