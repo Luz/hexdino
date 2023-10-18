@@ -288,7 +288,7 @@ fn main() -> Result<(), Error> {
                     };
                     needle.push(nibble);
                 }
-                cursor.set_pos(buf.find_subset(&needle).unwrap_or(cursor.pos()));
+                cursor.set_pos(buf.search(&needle).unwrap_or(cursor.pos()));
                 // infotext.push_str(&format!("Searching for: {:?}", needle ));
             }
             Rule::backspace => {
