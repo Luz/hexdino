@@ -14,7 +14,7 @@ mod draw;
 use draw::draw;
 
 mod find;
-use find::FindOptSubset;
+use find::*;
 use memmem::{Searcher, TwoWaySearcher};
 
 use crossterm::event::{read, Event};
