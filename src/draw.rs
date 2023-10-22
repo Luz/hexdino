@@ -23,7 +23,7 @@ pub fn draw(
     total_buf: &[u8],
     cols: usize,
     command: &String,
-    infotext: &mut String,
+    infotext: &String,
     cursor: Cursor,
     screenoffset: usize,
 ) -> Result<(), Error> {
