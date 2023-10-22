@@ -343,7 +343,8 @@ fn main() -> Result<(), Error> {
         }
 
         // Always move screen when cursor leaves screen
-        if cursor.pos() > (screenheight + screenoffset - 1) * COLS - 1 {
+        if cursor.pos() > ((screenheight + screenoffset).saturating_sub(1) * COLS).saturating_sub(1)
+        {
             screenoffset = 2 + cursor.pos() / COLS - screenheight;
         }
         if cursor.pos() < screenoffset * COLS {
