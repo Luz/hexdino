@@ -121,6 +121,36 @@ impl Cursor {
             }
         }
     }
+    pub fn move_n_left(&mut self, amount: usize) {
+        if self.is_over_ascii() {
+            self.sub(amount, 0);
+        } else {
+            let mut remaining = amount;
+
+            let pos_before = self.pos;
+            self.sub(remaining / 2, 0);
+            let pos_after = self.pos;
+            remaining -= 2 * (pos_before - pos_after);
+
+            if remaining == 0 {
+                return;
+            }
+            if self.is_over_right_nibble() {
+                self.select_left_nibble();
+                remaining = remaining.saturating_sub(1);
+            }
+            if remaining == 0 {
+                return;
+            }
+            if self.is_over_left_nibble() {
+                if self.pos > 0 {
+                    self.pos -= 1;
+                    self.select_right_nibble();
+                    return;
+                }
+            }
+        }
+    }
 }
 
 #[test]
@@ -317,4 +347,150 @@ fn cursor_right_nibble_move_5_right() {
     cursor.move_n_right(5, buf.len());
     assert_eq!(cursor.pos, 2);
     assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_ascii_move_0_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.move_n_left(0);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+    cursor.pos = 1;
+    cursor.move_n_left(0);
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_ascii_move_1_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.move_n_left(1);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+    cursor.pos = 1;
+    cursor.move_n_left(1);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_ascii_move_2_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.move_n_left(2);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+    cursor.pos = 1;
+    cursor.move_n_left(2);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_any_nibble_move_0_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(0);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(0);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(0);
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(0);
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_left_nibble_move_1_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(1);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(1);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_right_nibble_move_1_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(1);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(1);
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_left_nibble_move_2_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(2);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(2);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_right_nibble_move_2_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(2);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(2);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_left_nibble_move_3_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(3);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_left(3);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_right_nibble_move_3_left() {
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(3);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+    cursor.pos = 1;
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_left(3);
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
 }

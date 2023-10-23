@@ -114,17 +114,8 @@ fn main() -> Result<(), Error> {
                 cursor.sub(COLS, 0);
             }
             Rule::left => {
-                if cursor.is_over_ascii() {
-                    cursor.sub(1, 0);
-                } else if cursor.is_over_right_nibble() {
-                    cursor.select_left_nibble();
-                } else if cursor.is_over_left_nibble() {
-                    if cursor.pos() >= 1 {
-                        // not at start
-                        cursor.select_right_nibble();
-                    }
-                    cursor.sub(1, 0);
-                }
+                let amount: usize = cmd.as_str().parse().unwrap_or(1);
+                cursor.move_n_left(amount);
             }
             Rule::right => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);

@@ -1,7 +1,7 @@
 movement		= _{ down | up | left | right | start | end | bottom }
 down			= { "j" | "[B" }
 up			= { "k" | "[A" }
-left			= { "h" | "[D" }
+left			= { ASCII_DIGIT* ~ &("h" | "[D") }
 right			= { ASCII_DIGIT* ~ &("l" | "[C") }
 start			= { "0" }
 end			= { "$" }
