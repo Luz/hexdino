@@ -90,6 +90,37 @@ impl Cursor {
         self.set_pos(line * columns + pos_on_line);
         self.trim_to_max_minus_one(upperlimit);
     }
+    pub fn move_n_right(&mut self, amount: usize, upperlimit: usize) {
+        if self.is_over_ascii() {
+            self.add(amount, upperlimit);
+            self.trim_to_max_minus_one(upperlimit);
+        } else {
+            let mut remaining = amount;
+
+            let pos_before = self.pos;
+            self.add(remaining / 2, upperlimit);
+            let pos_after = self.pos;
+            remaining -= 2 * (pos_after - pos_before);
+
+            if remaining == 0 {
+                return;
+            }
+            if self.is_over_left_nibble() {
+                self.select_right_nibble();
+                remaining = remaining.saturating_sub(1);
+            }
+            if remaining == 0 {
+                return;
+            }
+            if self.is_over_right_nibble() {
+                if self.pos < upperlimit.saturating_sub(1) {
+                    self.pos += 1;
+                    self.select_left_nibble();
+                    return;
+                }
+            }
+        }
+    }
 }
 
 #[test]
@@ -132,4 +163,158 @@ fn cursor_jump_to_end_of_line() {
     println!("{:?}", buf.len());
     cursor.jump_to_end_of_line(COLS, buf.len());
     assert_eq!(cursor.pos, 19);
+}
+#[test]
+fn cursor_ascii_move_0_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.move_n_right(0, buf.len());
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_ascii_move_1_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.move_n_right(1, buf.len());
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_ascii_move_2_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.move_n_right(2, buf.len());
+    assert_eq!(cursor.pos, 2);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_ascii_move_3_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.move_n_right(3, buf.len());
+    assert_eq!(cursor.pos, 2);
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_left_nibble_move_0_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_right(0, buf.len());
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_right_nibble_move_0_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_right(0, buf.len());
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_left_nibble_move_1_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_right(1, buf.len());
+    assert_eq!(cursor.pos, 0);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_right_nibble_move_1_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_right(1, buf.len());
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_left_nibble_move_2_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_right(2, buf.len());
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_right_nibble_move_2_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_right(2, buf.len());
+    assert_eq!(cursor.pos, 1);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_left_nibble_move_4_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_right(4, buf.len());
+    assert_eq!(cursor.pos, 2);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_right_nibble_move_4_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_right(4, buf.len());
+    assert_eq!(cursor.pos, 2);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_left_nibble_move_5_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.move_n_right(5, buf.len());
+    assert_eq!(cursor.pos, 2);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+}
+#[test]
+fn cursor_right_nibble_move_5_right() {
+    // Create data from 0 to 2 as test data
+    let buf: Vec<u8> = (0..3).collect();
+    // 0x00 0x01 0x02
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.move_n_right(5, buf.len());
+    assert_eq!(cursor.pos, 2);
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
 }

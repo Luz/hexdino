@@ -127,17 +127,9 @@ fn main() -> Result<(), Error> {
                 }
             }
             Rule::right => {
-                if cursor.is_over_ascii() {
-                    cursor.add(1, buf.len());
-                } else if cursor.is_over_left_nibble() {
-                    cursor.select_right_nibble();
-                } else if cursor.is_over_right_nibble() {
-                    if cursor.pos() < buf.len().saturating_sub(1) {
-                        // not at end
-                        cursor.select_left_nibble();
-                    }
-                    cursor.add(1, buf.len());
-                }
+                let mut amount: usize = cmd.as_str().parse().unwrap_or(1);
+                infotext.push_str(&format!("{} ", amount));
+                cursor.move_n_right(amount, buf.len());
             }
             Rule::start => {
                 cursor.jump_to_start_of_line(COLS);
