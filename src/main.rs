@@ -127,8 +127,7 @@ fn main() -> Result<(), Error> {
                 }
             }
             Rule::right => {
-                let mut amount: usize = cmd.as_str().parse().unwrap_or(1);
-                infotext.push_str(&format!("{} ", amount));
+                let amount: usize = cmd.as_str().parse().unwrap_or(1);
                 cursor.move_n_right(amount, buf.len());
             }
             Rule::start => {
