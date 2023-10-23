@@ -275,10 +275,16 @@ fn main() -> Result<(), Error> {
                     };
                     cursor.set_pos(newpos);
                 } else {
-                    let searchbytes = cmd.clone().into_inner().as_str();
-                    let search = searchbytes.as_bytes();
-                    cursor.set_pos(buf.search(&search).unwrap_or(cursor.pos()));
-                    // infotext.push_str(&format!("searched for {:?}", needle));
+                    let searchstr = cmd.clone().into_inner().as_str();
+                    let search = searchstr.as_bytes();
+                    let newpos = match buf.search(&search) {
+                        Some(t) => t,
+                        None => {
+                            infotext.push_str(&format!("Pattern not found: {}", searchstr));
+                            cursor.pos() // Return same position
+                        }
+                    };
+                    cursor.set_pos(newpos);
                 }
             }
             Rule::backspace => {
