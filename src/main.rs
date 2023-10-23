@@ -277,17 +277,7 @@ fn main() -> Result<(), Error> {
                 } else {
                     let searchbytes = cmd.clone().into_inner().as_str();
                     let search = searchbytes.as_bytes();
-                    let mut needle = vec![];
-                    for i in 0..search.len() {
-                        let nibble = match search[i] as u8 {
-                            c @ 48..=57 => c - 48, // Numbers from 0 to 9
-                            c @ b'a'..=b'f' => c - 87,
-                            c @ b'A'..=b'F' => c - 55,
-                            _ => 0x10, // All other elements are wildcards
-                        };
-                        needle.push(nibble);
-                    }
-                    cursor.set_pos(buf.search(&needle).unwrap_or(cursor.pos()));
+                    cursor.set_pos(buf.search(&search).unwrap_or(cursor.pos()));
                     // infotext.push_str(&format!("searched for {:?}", needle));
                 }
             }
