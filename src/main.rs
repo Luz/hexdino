@@ -248,9 +248,14 @@ fn main() -> Result<(), Error> {
                 if cursor.is_over_ascii() {
                     let searchstr = cmd.clone().into_inner().as_str();
                     let search = searchstr.as_bytes();
-                    let foundpos = TwoWaySearcher::new(&search);
-                    // TODO add info if not found
-                    cursor.set_pos(foundpos.search_in(&buf).unwrap_or(cursor.pos()));
+                    let newpos = match TwoWaySearcher::new(&search).search_in(&buf) {
+                        Some(t) => t,
+                        None => {
+                            infotext.push_str(&format!("Pattern not found: {}", searchstr));
+                            cursor.pos() // Return same position
+                        }
+                    };
+                    cursor.set_pos(newpos);
                 } else {
                     infotext.push_str("Ascii-search works, when the cursor is over ascii");
                     command.pop();
@@ -261,9 +266,14 @@ fn main() -> Result<(), Error> {
                 if cursor.is_over_ascii() {
                     let searchstr = cmd.clone().into_inner().as_str();
                     let search = searchstr.as_bytes();
-                    let foundpos = TwoWaySearcher::new(&search);
-                    // TODO add info if not found
-                    cursor.set_pos(foundpos.search_in(&buf).unwrap_or(cursor.pos()));
+                    let newpos = match TwoWaySearcher::new(&search).search_in(&buf) {
+                        Some(t) => t,
+                        None => {
+                            infotext.push_str(&format!("Pattern not found: {}", searchstr));
+                            cursor.pos() // Return same position
+                        }
+                    };
+                    cursor.set_pos(newpos);
                 } else {
                     let searchbytes = cmd.clone().into_inner().as_str();
                     let search = searchbytes.as_bytes();
