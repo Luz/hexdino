@@ -242,7 +242,8 @@ fn main() -> Result<(), Error> {
             }
             Rule::gg => {
                 let line: usize = cmd.as_str().parse().unwrap_or(0);
-                cursor.jump_to_line(line, COLS, buf.len());
+                let pos_on_line = cursor.calculate_pos_on_line(COLS);
+                cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
             }
             Rule::searchend => {
                 if cursor.is_over_ascii() {

@@ -76,6 +76,7 @@ impl Cursor {
         self.pos = self.calculate_end_of_line(columns);
         self.trim_to_max_minus_one(upperlimit);
     }
+    #[allow(dead_code)]
     pub fn jump_to_line(&mut self, line: usize, columns: usize, upperlimit: usize) {
         self.set_pos(line * columns);
         self.trim_to_max_minus_one(upperlimit);
