@@ -134,8 +134,10 @@ fn main() -> Result<(), Error> {
                 }
             }
             Rule::bottom => {
+                let lastline = buf.len().saturating_sub(1) / COLS;
+                let line: usize = cmd.as_str().parse().unwrap_or(lastline);
+                infotext.push_str(&format!("line: {}", line));
                 let pos_on_line = cursor.calculate_pos_on_line(COLS);
-                let line = buf.len().saturating_sub(1) / COLS;
                 cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
             }
             Rule::replace => {
