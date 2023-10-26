@@ -76,6 +76,9 @@ impl Cursor {
         self.pos = self.calculate_end_of_line(columns);
         self.trim_to_max_minus_one(upperlimit);
     }
+    pub fn get_current_line(&self, columns: usize) -> usize {
+        self.pos / columns
+    }
     #[allow(dead_code)]
     pub fn jump_to_line(&mut self, line: usize, columns: usize, upperlimit: usize) {
         self.set_pos(line * columns);
@@ -494,4 +497,49 @@ fn cursor_right_nibble_move_3_left() {
     cursor.move_n_left(3);
     assert_eq!(cursor.pos, 0);
     assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_get_current_line() {
+    let mut cursor = Cursor::default();
+    assert_eq!(cursor.get_current_line(1), 0);
+    cursor.pos = 1;
+    assert_eq!(cursor.get_current_line(1), 1);
+    cursor.pos = 2;
+    assert_eq!(cursor.get_current_line(1), 2);
+    cursor.pos = 65535;
+    assert_eq!(cursor.get_current_line(1), 65535);
+    for pos in 0..=15 {
+        cursor.pos = pos;
+        assert_eq!(cursor.get_current_line(16), 0);
+    }
+    for pos in 16..=31 {
+        cursor.pos = pos;
+        assert_eq!(cursor.get_current_line(16), 1);
+    }
+    for cols in 2..=20 {
+        cursor.pos = 0;
+        assert_eq!(cursor.get_current_line(cols), 0);
+        cursor.pos = 1;
+        assert_eq!(cursor.get_current_line(cols), 0);
+        cursor.pos = cols - 1;
+        assert_eq!(cursor.get_current_line(cols), 0);
+        cursor.pos = cols;
+        assert_eq!(cursor.get_current_line(cols), 1);
+        cursor.pos = 16 * cols - 1;
+        assert_eq!(cursor.get_current_line(cols), 15);
+        cursor.pos = 16 * cols;
+        assert_eq!(cursor.get_current_line(cols), 16);
+        cursor.pos = 16 * cols + 1;
+        assert_eq!(cursor.get_current_line(cols), 16);
+        cursor.pos = 256 * cols - 1;
+        assert_eq!(cursor.get_current_line(cols), 256 - 1);
+        cursor.pos = 256 * cols;
+        assert_eq!(cursor.get_current_line(cols), 256);
+        cursor.pos = 4096 * cols - 1;
+        assert_eq!(cursor.get_current_line(cols), 4096 - 1);
+        cursor.pos = 4096 * cols;
+        assert_eq!(cursor.get_current_line(cols), 4096);
+        cursor.pos = 4096 * cols + 1;
+        assert_eq!(cursor.get_current_line(cols), 4096);
+    }
 }
