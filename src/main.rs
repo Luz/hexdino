@@ -123,22 +123,22 @@ fn main() -> Result<(), Error> {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
                 cursor.move_n_right(amount, buf.len());
             }
-            Rule::start => {
-                cursor.jump_to_start_of_line(COLS);
-            }
-            Rule::end => {
-                cursor.jump_to_end_of_line(COLS, buf.len());
-            }
             Rule::bottom => {
                 let lastline = buf.len().saturating_sub(1) / COLS;
                 let line: usize = cmd.as_str().parse().unwrap_or(lastline);
                 let pos_on_line = cursor.calculate_pos_on_line(COLS);
                 cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
             }
-            Rule::gg => {
+            Rule::top => {
                 let line: usize = cmd.as_str().parse().unwrap_or(0);
                 let pos_on_line = cursor.calculate_pos_on_line(COLS);
                 cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
+            }
+            Rule::start => {
+                cursor.jump_to_start_of_line(COLS);
+            }
+            Rule::end => {
+                cursor.jump_to_end_of_line(COLS, buf.len());
             }
             Rule::replace => {
                 clear = false;
