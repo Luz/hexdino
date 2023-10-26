@@ -161,6 +161,15 @@ impl Cursor {
             }
         }
     }
+    pub fn move_n_down(&mut self, amount: usize, columns: usize, upperlimit: usize) {
+        let pos_on_line = self.calculate_pos_on_line(columns);
+        let mut newline = amount + self.get_current_line(columns);
+        let lastline = self.get_last_line(columns, upperlimit);
+        if newline > lastline {
+            newline = lastline;
+        }
+        self.jump_to_pos_on_line(newline, pos_on_line, columns, upperlimit);
+    }
 }
 
 #[test]
