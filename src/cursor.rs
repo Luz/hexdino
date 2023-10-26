@@ -79,6 +79,12 @@ impl Cursor {
     pub fn get_current_line(&self, columns: usize) -> usize {
         self.pos / columns
     }
+    pub fn get_last_line(&self, columns: usize, upperlimit: usize) -> usize {
+        // upperlimit is supposedly vec.len() but we want the last element,
+        // so we subtract 1. To ensure no "-1" for the usize, we saturate
+        let last_element: usize = upperlimit.saturating_sub(1);
+        last_element / columns
+    }
     #[allow(dead_code)]
     pub fn jump_to_line(&mut self, line: usize, columns: usize, upperlimit: usize) {
         self.set_pos(line * columns);
