@@ -182,6 +182,10 @@ impl Cursor {
         let currentline = self.get_current_line(columns);
         self.jump_to_pos_on_line(currentline, pos_on_line, columns, upperlimit);
     }
+    pub fn move_to_line(&mut self, line: usize, columns: usize, upperlimit: usize) {
+        let pos_on_line = self.calculate_pos_on_line(columns);
+        self.jump_to_pos_on_line(line, pos_on_line, columns, upperlimit);
+    }
 }
 
 #[test]

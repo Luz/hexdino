@@ -124,15 +124,13 @@ fn main() -> Result<(), Error> {
                 cursor.move_n_right(amount, buf.len());
             }
             Rule::bottom => {
-                let lastline = buf.len().saturating_sub(1) / COLS;
+                let lastline = cursor.get_last_line(COLS, buf.len());
                 let line: usize = cmd.as_str().parse().unwrap_or(lastline);
-                let pos_on_line = cursor.calculate_pos_on_line(COLS);
-                cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
+                cursor.move_to_line(line, COLS, buf.len());
             }
             Rule::top => {
                 let line: usize = cmd.as_str().parse().unwrap_or(0);
-                let pos_on_line = cursor.calculate_pos_on_line(COLS);
-                cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
+                cursor.move_to_line(line, COLS, buf.len());
             }
             Rule::start => {
                 cursor.jump_to_start_of_line(COLS);
