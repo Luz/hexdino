@@ -70,7 +70,7 @@ fn main() -> Result<(), Error> {
     file.read_to_end(&mut buf).expect("File could not be read.");
 
     enable_raw_mode()?;
-    draw(&buf, COLS, &command, &mut infotext, cursor, screenoffset)?;
+    draw(&buf, COLS, &command, &infotext, cursor, screenoffset)?;
 
     let mut quitnow = false;
     while quitnow == false {
@@ -334,7 +334,7 @@ fn main() -> Result<(), Error> {
             screenoffset = cursor.pos() / COLS;
         }
 
-        draw(&buf, COLS, &command, &mut infotext, cursor, screenoffset)?;
+        draw(&buf, COLS, &command, &infotext, cursor, screenoffset)?;
     }
 
     disable_raw_mode()?;
