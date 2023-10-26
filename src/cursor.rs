@@ -71,9 +71,15 @@ impl Cursor {
     }
     pub fn jump_to_start_of_line(&mut self, columns: usize) {
         self.pos = self.calculate_start_of_line(columns);
+        if self.is_over_right_nibble() {
+            self.select_left_nibble();
+        }
     }
     pub fn jump_to_end_of_line(&mut self, columns: usize, upperlimit: usize) {
         self.pos = self.calculate_end_of_line(columns);
+        if self.is_over_left_nibble() {
+            self.select_right_nibble();
+        }
         self.trim_to_max_minus_one(upperlimit);
     }
     pub fn get_current_line(&self, columns: usize) -> usize {
@@ -185,7 +191,7 @@ fn cursor_default() {
     assert_eq!(cursor.sel, CursorSelects::LeftNibble);
 }
 #[test]
-fn cursor_jump_to_start_of_line() {
+fn cursor_jump_to_start_of_line_ensure_position() {
     // Assuming the column width is COLS
     const COLS: usize = 16;
     // Create data from 0 to 19 as test data
@@ -203,7 +209,15 @@ fn cursor_jump_to_start_of_line() {
     assert_eq!(cursor.pos, 0);
 }
 #[test]
-fn cursor_jump_to_end_of_line() {
+fn cursor_jump_to_start_of_line_selects_left_nibble() {
+    const COLS: usize = 16;
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.jump_to_start_of_line(COLS);
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
+}
+#[test]
+fn cursor_jump_to_end_of_line_ensure_position() {
     // Assuming the column width is COLS
     const COLS: usize = 16;
     // Create data from 0 to 19 as test data
@@ -218,6 +232,15 @@ fn cursor_jump_to_end_of_line() {
     println!("{:?}", buf.len());
     cursor.jump_to_end_of_line(COLS, buf.len());
     assert_eq!(cursor.pos, 19);
+}
+#[test]
+fn cursor_jump_to_end_of_line_selects_right_nibble() {
+    const COLS: usize = 16;
+    // Create data from 0 to 3 as test data
+    let buf: Vec<u8> = (0..2).collect();
+    let mut cursor = Cursor::default();
+    cursor.jump_to_end_of_line(COLS, buf.len());
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
 }
 #[test]
 fn cursor_ascii_move_0_right() {

@@ -125,15 +125,9 @@ fn main() -> Result<(), Error> {
             }
             Rule::start => {
                 cursor.jump_to_start_of_line(COLS);
-                if cursor.is_over_right_nibble() {
-                    cursor.select_left_nibble();
-                }
             }
             Rule::end => {
                 cursor.jump_to_end_of_line(COLS, buf.len());
-                if cursor.is_over_left_nibble() {
-                    cursor.select_right_nibble();
-                }
             }
             Rule::bottom => {
                 let lastline = buf.len().saturating_sub(1) / COLS;
