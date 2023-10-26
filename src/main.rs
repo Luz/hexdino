@@ -108,10 +108,12 @@ fn main() -> Result<(), Error> {
 
         match cmd.as_rule() {
             Rule::down => {
-                cursor.add(COLS, buf.len());
+                let amount: usize = cmd.as_str().parse().unwrap_or(1);
+                cursor.add(amount * COLS, buf.len());
             }
             Rule::up => {
-                cursor.sub(COLS, 0);
+                let amount: usize = cmd.as_str().parse().unwrap_or(1);
+                cursor.sub(amount * COLS, 0);
             }
             Rule::left => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
