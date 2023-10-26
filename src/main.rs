@@ -138,7 +138,11 @@ fn main() -> Result<(), Error> {
             Rule::bottom => {
                 let lastline = buf.len().saturating_sub(1) / COLS;
                 let line: usize = cmd.as_str().parse().unwrap_or(lastline);
-                infotext.push_str(&format!("line: {}", line));
+                let pos_on_line = cursor.calculate_pos_on_line(COLS);
+                cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
+            }
+            Rule::gg => {
+                let line: usize = cmd.as_str().parse().unwrap_or(0);
                 let pos_on_line = cursor.calculate_pos_on_line(COLS);
                 cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
             }
@@ -243,11 +247,6 @@ fn main() -> Result<(), Error> {
             }
             Rule::repeat => {
                 autoparse = lastcommand.clone();
-            }
-            Rule::gg => {
-                let line: usize = cmd.as_str().parse().unwrap_or(0);
-                let pos_on_line = cursor.calculate_pos_on_line(COLS);
-                cursor.jump_to_pos_on_line(line, pos_on_line, COLS, buf.len());
             }
             Rule::searchend => {
                 if cursor.is_over_ascii() {
