@@ -170,6 +170,12 @@ impl Cursor {
         }
         self.jump_to_pos_on_line(newline, pos_on_line, columns, upperlimit);
     }
+    pub fn move_n_up(&mut self, amount: usize, columns: usize, upperlimit: usize) {
+        let pos_on_line = self.calculate_pos_on_line(columns);
+        self.sub(amount * columns, 0);
+        let currentline = self.get_current_line(columns);
+        self.jump_to_pos_on_line(currentline, pos_on_line, columns, upperlimit);
+    }
 }
 
 #[test]
