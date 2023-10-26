@@ -173,9 +173,6 @@ fn main() -> Result<(), Error> {
                 }
                 lastcommand = command.clone();
             }
-            Rule::replaceend => {
-                // infotext.push_str("Replacing canceled");
-            }
             Rule::remove => {
                 // check if in valid range
                 if buf.len() > 0 && cursor.pos() < buf.len() {
