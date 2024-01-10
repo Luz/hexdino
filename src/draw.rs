@@ -121,7 +121,7 @@ pub fn draw(
 }
 
 fn get_absolute_line(cols: usize, screenoffset: usize, z: usize) -> usize {
-    return z * cols + screenoffset * cols;
+    z * cols + screenoffset * cols
 }
 fn get_screen_size(cols: usize) -> usize {
     let screensize = crossterm::terminal::size().unwrap_or_default();
@@ -133,7 +133,7 @@ fn get_screen_size(cols: usize) -> usize {
     if screenheight >= 1 {
         ret = (screenheight - 1) * cols;
     }
-    return ret;
+    ret
 }
 fn get_absolute_draw_indices(buflen: usize, cols: usize, screenoffset: usize) -> (usize, usize) {
     // Do we need to round() down to 16 when using get_screen_size()?
@@ -145,7 +145,7 @@ fn get_absolute_draw_indices(buflen: usize, cols: usize, screenoffset: usize) ->
         ending_pos = buflen;
     }
 
-    return (starting_pos, ending_pos);
+    (starting_pos, ending_pos)
 }
 
 fn color_left_nibble(cursor: Cursor) {
