@@ -4,7 +4,7 @@ use crossterm::event::KeyCode;
 // (E.g. the Enter, Esc and Backspace) to simple characters.
 // We later need these simple fix values when using the pest parser for further processing.
 pub fn extract(input: KeyCode) -> Option<char> {
-    let value = match input {
+    match input {
         // This is the most important one:
         KeyCode::Char(z) => Some(z), // Actually extract the character!
 
@@ -41,6 +41,5 @@ pub fn extract(input: KeyCode) -> Option<char> {
         */
         // All unhandled KeyCodes:
         _ => None,
-    };
-    value
+    }
 }

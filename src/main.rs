@@ -73,7 +73,7 @@ fn main() -> Result<(), Error> {
     draw(&buf, COLS, &command, &infotext, cursor, screenoffset)?;
 
     let mut quitnow = false;
-    while quitnow == false {
+    while !quitnow {
         if autoparse.is_empty() {
             let key = read()?;
             let mut keycode: char = '\u{00}';
@@ -90,7 +90,7 @@ fn main() -> Result<(), Error> {
             };
             command.push_str(&keycode.clone().to_string());
         } else {
-            command.push(autoparse.chars().nth(0).unwrap());
+            command.push(autoparse.chars().next().unwrap());
             autoparse.remove(0);
         }
 
@@ -167,7 +167,7 @@ fn main() -> Result<(), Error> {
             }
             Rule::remove => {
                 // check if in valid range
-                if buf.len() > 0 && cursor.pos() < buf.len() {
+                if !buf.is_empty() && cursor.pos() < buf.len() {
                     // remove the current char
                     buf.remove(cursor.pos());
                 }

@@ -13,8 +13,8 @@ pub trait Search {
 impl Search for Vec<u8> {
     fn search(&self, search: &[u8]) -> Option<usize> {
         let mut needle = Vec::new();
-        for i in 0..search.len() {
-            let nibble = match search[i] as u8 {
+        for byte in search {
+            let nibble = match byte {
                 c @ 48..=57 => c - 48, // Numbers from 0 to 9
                 c @ b'a'..=b'f' => c - 87,
                 c @ b'A'..=b'F' => c - 55,
@@ -31,7 +31,7 @@ impl Search for Vec<u8> {
         let mut bytes_needed_to_match = needle.len() / 2;
         if needle_bytes_odd {
             bytes_needed_to_match += 1; // As we add the wildcard to make it even again
-            if needle.last().unwrap_or(&0).clone() >= 0x10 {
+            if *needle.last().unwrap_or(&0) >= 0x10 {
                 // This fixes the rare case when a user:
                 // - uses an odd amount of nibbles to search
                 // - ends his 3 nibbles with a wildcard character
