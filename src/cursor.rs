@@ -128,12 +128,10 @@ impl Cursor {
             if remaining == 0 {
                 return;
             }
-            if self.is_over_right_nibble() {
-                if self.pos < upperlimit.saturating_sub(1) {
-                    self.pos += 1;
-                    self.select_left_nibble();
-                    return;
-                }
+            if self.is_over_right_nibble() && self.pos < upperlimit.saturating_sub(1) {
+                self.pos += 1;
+                self.select_left_nibble();
+                return;
             }
         }
     }
@@ -158,12 +156,10 @@ impl Cursor {
             if remaining == 0 {
                 return;
             }
-            if self.is_over_left_nibble() {
-                if self.pos > 0 {
-                    self.pos -= 1;
-                    self.select_right_nibble();
-                    return;
-                }
+            if self.is_over_left_nibble() && self.pos > 0 {
+                self.pos -= 1;
+                self.select_right_nibble();
+                return;
             }
         }
     }
