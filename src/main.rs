@@ -64,7 +64,7 @@ fn main() -> Result<(), Error> {
         .read(true)
         .write(true)
         .create(true)
-        .open(&path)
+        .open(path)
         .context("File could not be opened.")?;
 
     file.read_to_end(&mut buf).expect("File could not be read.");
@@ -305,7 +305,7 @@ fn main() -> Result<(), Error> {
                     .read(true)
                     .write(true)
                     .create(true)
-                    .open(&path)
+                    .open(path)
                     .context("File could not be opened.")?;
                 file.seek(SeekFrom::Start(0))
                     .expect("Filepointer could not be set to 0");
