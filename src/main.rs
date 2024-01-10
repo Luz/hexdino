@@ -241,7 +241,7 @@ fn main() -> Result<(), Error> {
                 if cursor.is_over_ascii() {
                     let searchstr = cmd.clone().into_inner().as_str();
                     let search = searchstr.as_bytes();
-                    let newpos = match TwoWaySearcher::new(&search).search_in(&buf) {
+                    let newpos = match TwoWaySearcher::new(search).search_in(&buf) {
                         Some(t) => t,
                         None => {
                             infotext.push_str(&format!("Pattern not found: {}", searchstr));
@@ -259,7 +259,7 @@ fn main() -> Result<(), Error> {
                 if cursor.is_over_ascii() {
                     let searchstr = cmd.clone().into_inner().as_str();
                     let search = searchstr.as_bytes();
-                    let newpos = match TwoWaySearcher::new(&search).search_in(&buf) {
+                    let newpos = match TwoWaySearcher::new(search).search_in(&buf) {
                         Some(t) => t,
                         None => {
                             infotext.push_str(&format!("Pattern not found: {}", searchstr));
@@ -270,7 +270,7 @@ fn main() -> Result<(), Error> {
                 } else {
                     let searchstr = cmd.clone().into_inner().as_str();
                     let search = searchstr.as_bytes();
-                    let newpos = match buf.search(&search) {
+                    let newpos = match buf.search(search) {
                         Some(t) => t,
                         None => {
                             infotext.push_str(&format!("Pattern not found: {}", searchstr));
