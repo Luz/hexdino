@@ -18,8 +18,7 @@ pub fn extract(input: KeyCode) -> Option<char> {
         KeyCode::Down => Some('j'),
         KeyCode::Home => Some('0'),
         KeyCode::End => Some('$'),
-        KeyCode::Tab => Some('J'),     // TODO: is this good?
-        KeyCode::BackTab => Some('J'), // TODO: is this good?
+        KeyCode::Tab | KeyCode::BackTab => Some('J'), // TODO: is this good?
         KeyCode::Insert => Some('i'),
 
         // Keys that might get added in the future
