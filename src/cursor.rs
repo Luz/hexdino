@@ -116,7 +116,7 @@ impl Cursor {
             let pos_before = self.pos;
             self.add(remaining / 2, upperlimit);
             let pos_after = self.pos;
-            remaining -= 2 * (pos_after - pos_before);
+            remaining = remaining.saturating_sub(2 * (pos_after.saturating_sub(pos_before)));
 
             if remaining == 0 {
                 return;
@@ -144,7 +144,7 @@ impl Cursor {
             let pos_before = self.pos;
             self.sub(remaining / 2, 0);
             let pos_after = self.pos;
-            remaining -= 2 * (pos_before - pos_after);
+            remaining = remaining.saturating_sub(2 * (pos_before.saturating_sub(pos_after)));
 
             if remaining == 0 {
                 return;
