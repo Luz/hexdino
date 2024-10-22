@@ -6,6 +6,7 @@ use crossterm::{
     },
     terminal,
 };
+use std::cmp::Ordering;
 use std::io::prelude::*;
 use std::io::stdout;
 
@@ -51,38 +52,42 @@ pub fn draw(
         queue!(out, Print(" "))?;
         for s in 0..cols {
             let pos: usize = z * cols + s;
-            if pos < buf.len() {
-                if pos + cols * screenoffset == cursor.pos() {
-                    color_left_nibble(cursor);
-                }
-                let left_nibble: String = format!("{:01X}", buf[pos] >> 4);
-                queue!(out, Print(left_nibble))?;
-                queue!(out, ResetColor)?;
+            match pos.cmp(&buf.len()) {
+                Ordering::Less => {
+                    if pos + cols * screenoffset == cursor.pos() {
+                        color_left_nibble(cursor);
+                    }
+                    let left_nibble: String = format!("{:01X}", buf[pos] >> 4);
+                    queue!(out, Print(left_nibble))?;
+                    queue!(out, ResetColor)?;
 
-                if pos + cols * screenoffset == cursor.pos() {
-                    color_right_nibble(cursor);
-                }
-                let right_nibble: String = format!("{:01X}", buf[pos] & 0x0F);
-                queue!(out, Print(right_nibble))?;
-                queue!(out, ResetColor)?;
+                    if pos + cols * screenoffset == cursor.pos() {
+                        color_right_nibble(cursor);
+                    }
+                    let right_nibble: String = format!("{:01X}", buf[pos] & 0x0F);
+                    queue!(out, Print(right_nibble))?;
+                    queue!(out, ResetColor)?;
 
-                queue!(out, Print(" "))?;
-            } else if pos == buf.len() {
-                if pos + cols * screenoffset == cursor.pos() {
-                    color_left_nibble(cursor);
+                    queue!(out, Print(" "))?;
                 }
-                queue!(out, Print("-"))?;
-                queue!(out, ResetColor)?;
+                Ordering::Equal => {
+                    if pos + cols * screenoffset == cursor.pos() {
+                        color_left_nibble(cursor);
+                    }
+                    queue!(out, Print("-"))?;
+                    queue!(out, ResetColor)?;
 
-                if pos + cols * screenoffset == cursor.pos() {
-                    color_right_nibble(cursor);
+                    if pos + cols * screenoffset == cursor.pos() {
+                        color_right_nibble(cursor);
+                    }
+                    queue!(out, Print("-"))?;
+                    queue!(out, ResetColor)?;
+
+                    queue!(out, Print(" "))?;
                 }
-                queue!(out, Print("-"))?;
-                queue!(out, ResetColor)?;
-
-                queue!(out, Print(" "))?;
-            } else {
-                queue!(out, Print("-- "))?;
+                Ordering::Greater => {
+                    queue!(out, Print("-- "))?;
+                }
             }
         }
         // Additional space between hex and ascii
@@ -90,17 +95,23 @@ pub fn draw(
         for s in 0..cols {
             let pos: usize = z * cols + s;
             color_ascii(pos + cols * screenoffset == cursor.pos(), cursor);
-            if pos < buf.len() {
-                if let c @ 32..=126 = buf[pos] {
-                    let ascii_symbol: String = format!("{}", c as char);
-                    queue!(out, Print(ascii_symbol))?;
-                } else {
-                    // Mark non-ascii symbols
-                    queue!(out, Print("."))?;
+            match pos.cmp(&buf.len()) {
+                Ordering::Less => {
+                    if let c @ 32..=126 = buf[pos] {
+                        let ascii_symbol: String = format!("{}", c as char);
+                        queue!(out, Print(ascii_symbol))?;
+                    } else {
+                        // Mark non-ascii symbols
+                        queue!(out, Print("."))?;
+                    }
                 }
-            } else if pos == buf.len() {
-                // Pad ascii with spaces
-                queue!(out, Print(" "))?;
+                Ordering::Equal => {
+                    // Pad ascii with spaces
+                    queue!(out, Print(" "))?;
+                }
+                Ordering::Greater => {
+                    // No need to fill characters behind buffer size
+                }
             }
             queue!(out, ResetColor)?;
         }
