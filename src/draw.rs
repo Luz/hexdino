@@ -38,11 +38,8 @@ pub fn draw(
     let screensize = crossterm::terminal::size()?;
     let screenheight: usize = screensize.1 as usize;
 
-    let mut tmpbuflen = buf.len();
-    if tmpbuflen >= 1 {
-        tmpbuflen -= 1;
-    }
-    let rows = tmpbuflen / cols + 1;
+    let buflen_minus_one = buf.len().saturating_sub(1);
+    let rows = buflen_minus_one / cols + 1;
 
     for z in 0..rows {
         // 8 hex digits (4GB/cols or 0.25GB@cols=COLS)
