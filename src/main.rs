@@ -64,6 +64,7 @@ fn main() -> Result<(), Error> {
         .read(true)
         .write(true)
         .create(true)
+        .truncate(false)
         .open(path)
         .context("File could not be opened.")?;
 
@@ -305,6 +306,7 @@ fn main() -> Result<(), Error> {
                     .read(true)
                     .write(true)
                     .create(true)
+                    .truncate(false)
                     .open(path)
                     .context("File could not be opened.")?;
                 file.seek(SeekFrom::Start(0))
