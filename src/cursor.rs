@@ -587,3 +587,29 @@ fn cursor_get_current_line() {
         assert_eq!(cursor.get_current_line(cols), 4096);
     }
 }
+#[test]
+fn cursor_behind_data_left_nibble_move_1_right() {
+    // Create data from 0 to 1 as test data
+    let buf: Vec<u8> = (0..2).collect();
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.pos = 2;
+    cursor.move_n_right(1, buf.len());
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+    //TODO: Where to be now?
+    //assert_eq!(cursor.pos, 2);
+}
+#[test]
+fn cursor_behind_data_right_nibble_move_1_right() {
+    // Create data from 0 to 1 as test data
+    let buf: Vec<u8> = (0..2).collect();
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.pos = 2;
+    cursor.move_n_right(1, buf.len());
+    assert_eq!(cursor.sel, CursorSelects::RightNibble);
+    //TODO: Where to be now?
+    //assert_eq!(cursor.pos, 2);
+}
