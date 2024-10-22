@@ -17,7 +17,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.70"
 libc = "0.2"
-crossterm = "0.25.0"
+crossterm = "0.28.1"
 pest = "2.1"
 pest_derive = "2.1"
 memmem = "0.1.1"
