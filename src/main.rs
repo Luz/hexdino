@@ -230,11 +230,7 @@ fn main() -> Result<(), Error> {
                 lastcommand = command.clone();
             }
             Rule::jumpascii => {
-                if cursor.is_over_ascii() {
-                    cursor.select_left_nibble();
-                } else {
-                    cursor.select_ascii();
-                }
+                cursor.swap_selection_hex_ascii();
             }
             Rule::querry => {
                 // Most likely will be changed later

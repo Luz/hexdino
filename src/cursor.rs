@@ -34,6 +34,13 @@ impl Cursor {
     pub fn select_ascii(&mut self) {
         self.sel = CursorSelects::AsciiChar;
     }
+    pub fn swap_selection_hex_ascii(&mut self) {
+        if self.is_over_ascii() {
+            self.select_left_nibble();
+        } else {
+            self.select_ascii();
+        }
+    }
     pub fn pos(&self) -> usize {
         self.pos
     }
@@ -615,4 +622,31 @@ fn cursor_behind_data_right_nibble_move_1_right() {
     assert_eq!(cursor.sel, CursorSelects::RightNibble);
     //TODO: Where to be now?
     //assert_eq!(cursor.pos, 2);
+}
+#[test]
+fn cursor_left_nibble_swap_to_ascii() {
+    let buf: Vec<u8> = (0..2).collect();
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::LeftNibble;
+    cursor.swap_selection_hex_ascii();
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_right_nibble_swap_to_ascii() {
+    let buf: Vec<u8> = (0..2).collect();
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::RightNibble;
+    cursor.swap_selection_hex_ascii();
+    assert_eq!(cursor.sel, CursorSelects::AsciiChar);
+}
+#[test]
+fn cursor_ascii_swap_to_hex() {
+    let buf: Vec<u8> = (0..2).collect();
+    // 0x00 0x01
+    let mut cursor = Cursor::default();
+    cursor.sel = CursorSelects::AsciiChar;
+    cursor.swap_selection_hex_ascii();
+    assert_eq!(cursor.sel, CursorSelects::LeftNibble);
 }
