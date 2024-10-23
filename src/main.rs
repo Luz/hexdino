@@ -292,12 +292,26 @@ fn main() -> Result<(), Error> {
             }
             Rule::exit => quitnow = true,
             Rule::save => save = true,
-            Rule::escape => (),
             Rule::gatherall => {
                 // When the command is still to be fully built
                 clear = false;
             }
-            _ => (),
+            // The parser generates those cases, even when marked
+            // as silent in src/cmd.pest (by using the "_"-prefix)
+            // Maybe this could be fixed upstream?
+            Rule::escape
+            | Rule::movement
+            | Rule::search
+            | Rule::searchstr
+            | Rule::hex_digit
+            | Rule::quickstuffescaped
+            | Rule::quickstuff
+            | Rule::escape_char
+            | Rule::anything_but_escape
+            | Rule::backspace_char
+            | Rule::cmd
+            | Rule::gatherone
+            | Rule::cmd_list => (),
         }
 
         if save {
