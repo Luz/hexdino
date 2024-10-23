@@ -68,7 +68,7 @@ fn main() -> Result<(), Error> {
         .open(path)
         .context("File could not be opened.")?;
 
-    file.read_to_end(&mut buf).expect("File could not be read.");
+    file.read_to_end(&mut buf)?;
 
     enable_raw_mode()?;
     draw(&buf, COLS, &command, &infotext, cursor, screenoffset)?;
