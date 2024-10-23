@@ -13,6 +13,9 @@ pub struct Cursor {
 }
 
 impl Cursor {
+    pub fn selects(&self) -> CursorSelects {
+        self.sel
+    }
     pub fn is_over_left_nibble(&self) -> bool {
         self.sel == CursorSelects::LeftNibble
     }

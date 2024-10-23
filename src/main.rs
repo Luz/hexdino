@@ -29,7 +29,7 @@ use pest_derive::*;
 struct CmdParser;
 
 mod cursor;
-use cursor::Cursor;
+use cursor::*;
 
 #[derive(ArgParser)]
 #[clap(version, long_about = None)]
@@ -144,24 +144,25 @@ fn main() -> Result<(), Error> {
             }
             Rule::replacement => {
                 let key = command.chars().last().unwrap_or('x');
-                if cursor.is_over_ascii() {
-                    if cursor.pos() >= buf.len() {
-                        buf.insert(cursor.pos(), 0);
+
+                // Allow inserting stuff behind end of buffer
+                if cursor.pos() >= buf.len() {
+                    buf.insert(cursor.pos(), 0);
+                }
+                // Insert the key at the selected position
+                match cursor.selects() {
+                    CursorSelects::AsciiChar => {
+                        buf[cursor.pos()] = key as u8;
                     }
-                    buf[cursor.pos()] = key as u8;
-                } else {
-                    let mask = if cursor.is_over_left_nibble() {
-                        0x0F
-                    } else {
-                        0xF0
-                    };
-                    let shift = if cursor.is_over_left_nibble() { 4 } else { 0 };
-                    if cursor.pos() >= buf.len() {
-                        buf.insert(cursor.pos(), 0);
+                    CursorSelects::LeftNibble => {
+                        if let Some(c) = key.to_digit(16) {
+                            buf[cursor.pos()] = buf[cursor.pos()] & 0x0F | (c as u8) << 4;
+                        }
                     }
-                    // Change the selected nibble
-                    if let Some(c) = key.to_digit(16) {
-                        buf[cursor.pos()] = buf[cursor.pos()] & mask | (c as u8) << shift;
+                    CursorSelects::RightNibble => {
+                        if let Some(c) = key.to_digit(16) {
+                            buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | (c as u8);
+                        }
                     }
                 }
                 lastcommand = command.clone();
