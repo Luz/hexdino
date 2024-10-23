@@ -323,11 +323,9 @@ fn main() -> Result<(), Error> {
                     .truncate(false)
                     .open(path)
                     .context("File could not be opened.")?;
-                file.seek(SeekFrom::Start(0))
-                    .expect("Filepointer could not be set to 0");
-                file.write_all(&buf).expect("File could not be written.");
-                file.set_len(buf.len() as u64)
-                    .expect("File could not be set to correct lenght.");
+                file.seek(SeekFrom::Start(0))?;
+                file.write_all(&buf)?;
+                file.set_len(buf.len() as u64)?;
                 command.push_str("File saved!");
             } else {
                 command.push_str("Careful, file could not be saved!");
