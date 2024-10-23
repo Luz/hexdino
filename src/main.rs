@@ -195,29 +195,33 @@ fn main() -> Result<(), Error> {
             Rule::insertstuff => {
                 let key = command.chars().last().unwrap_or('x');
 
-                if cursor.is_over_left_nibble() {
-                    if let Some(c) = key.to_digit(16) {
-                        buf.insert(cursor.pos(), (c as u8) << 4);
-                        cursor.select_right_nibble();
+                match cursor.selects() {
+                    CursorSelects::LeftNibble => {
+                        if let Some(c) = key.to_digit(16) {
+                            buf.insert(cursor.pos(), (c as u8) << 4);
+                            cursor.select_right_nibble();
+                        }
                     }
-                } else if cursor.is_over_right_nibble() {
-                    // This if checks if we are out of range already
-                    if cursor.pos() == buf.len() {
-                        // Then just insert some data
-                        buf.insert(cursor.pos(), 0);
+                    CursorSelects::RightNibble => {
+                        // This if checks if we are out of range already
+                        if cursor.pos() == buf.len() {
+                            // Then just insert some data
+                            buf.insert(cursor.pos(), 0);
+                        }
+                        if let Some(c) = key.to_digit(16) {
+                            buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | c as u8;
+                            cursor.select_left_nibble();
+                            // This puts the cursor out of range intentionally,
+                            // inserting nibbles would feel strange otherwise.
+                            cursor.add(1, buf.len() + 1);
+                        }
                     }
-                    if let Some(c) = key.to_digit(16) {
-                        buf[cursor.pos()] = buf[cursor.pos()] & 0xF0 | c as u8;
-                        cursor.select_left_nibble();
+                    CursorSelects::AsciiChar => {
+                        buf.insert(cursor.pos(), key as u8);
                         // This puts the cursor out of range intentionally,
-                        // inserting nibbles would feel strange otherwise.
+                        // this is probably later used by the command 'a'
                         cursor.add(1, buf.len() + 1);
                     }
-                } else if cursor.is_over_ascii() {
-                    buf.insert(cursor.pos(), key as u8);
-                    // This puts the cursor out of range intentionally,
-                    // this is probably later used by the command 'a'
-                    cursor.add(1, buf.len() + 1);
                 }
 
                 clear = false;
