@@ -625,8 +625,6 @@ fn cursor_behind_data_right_nibble_move_1_right() {
 }
 #[test]
 fn cursor_left_nibble_swap_to_ascii() {
-    let buf: Vec<u8> = (0..2).collect();
-    // 0x00 0x01
     let mut cursor = Cursor::default();
     cursor.sel = CursorSelects::LeftNibble;
     cursor.swap_selection_hex_ascii();
@@ -634,8 +632,6 @@ fn cursor_left_nibble_swap_to_ascii() {
 }
 #[test]
 fn cursor_right_nibble_swap_to_ascii() {
-    let buf: Vec<u8> = (0..2).collect();
-    // 0x00 0x01
     let mut cursor = Cursor::default();
     cursor.sel = CursorSelects::RightNibble;
     cursor.swap_selection_hex_ascii();
@@ -643,8 +639,6 @@ fn cursor_right_nibble_swap_to_ascii() {
 }
 #[test]
 fn cursor_ascii_swap_to_hex() {
-    let buf: Vec<u8> = (0..2).collect();
-    // 0x00 0x01
     let mut cursor = Cursor::default();
     cursor.sel = CursorSelects::AsciiChar;
     cursor.swap_selection_hex_ascii();
