@@ -180,13 +180,13 @@ fn main() -> Result<(), Error> {
             }
             Rule::dd => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
-                if cursor.pos() < buf.len() {
-                    let startofline = cursor.calculate_start_of_line(COLS);
-                    let mut endofline = startofline + (COLS * amount);
-                    endofline = cmp::min(endofline, buf.len());
-                    buf.drain(startofline..endofline);
-                    cursor.trim_to_max_minus_one(buf.len());
-                }
+                let mut start = cursor.calculate_start_of_line(COLS);
+                let mut end = start + (COLS * amount);
+                start = cmp::min(start, buf.len());
+                end = cmp::min(end, buf.len());
+                buf.drain(start..end);
+                // Move cursor if it is out of data
+                cursor.trim_to_max_minus_one(buf.len());
                 lastcommand = command.clone();
             }
             Rule::bigd => {
@@ -196,6 +196,7 @@ fn main() -> Result<(), Error> {
                 start = cmp::min(start, buf.len());
                 end = cmp::min(end, buf.len());
                 buf.drain(start..end);
+                // Move cursor if it is out of data
                 cursor.trim_to_max_minus_one(buf.len());
                 lastcommand = command.clone();
             }
