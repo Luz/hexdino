@@ -168,11 +168,12 @@ fn main() -> Result<(), Error> {
                 lastcommand = command.clone();
             }
             Rule::remove => {
-                // check if in valid range
-                if !buf.is_empty() && cursor.pos() < buf.len() {
-                    // remove the current char
-                    buf.remove(cursor.pos());
-                }
+                let amount: usize = cmd.as_str().parse().unwrap_or(1);
+                let mut start = cursor.pos();
+                let mut end = start + amount;
+                start = cmp::min(start, buf.len());
+                end = cmp::min(end, buf.len());
+                buf.drain(start..end);
                 // Move cursor if it is out of data
                 cursor.trim_to_max_minus_one(buf.len());
                 lastcommand = command.clone();

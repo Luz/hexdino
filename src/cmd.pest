@@ -10,7 +10,7 @@ end			= { "$" }
 
 replace			= { "r" }
 replacement		= { &replace ~ ANY ~ (anything_but_escape) }
-remove			= { "x" }
+remove			= { ASCII_DIGIT* ~ &"x" }
 dd			= { ASCII_DIGIT* ~ &"dd" }
 insert			= { "i" }
 insertstuff		= { &insert ~ ANY ~ (anything_but_escape)+ }
