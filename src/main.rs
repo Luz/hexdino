@@ -189,6 +189,16 @@ fn main() -> Result<(), Error> {
                 }
                 lastcommand = command.clone();
             }
+            Rule::bigd => {
+                let mut start = cursor.pos();
+                // One more as we also want to delete the last character
+                let mut end = cursor.calculate_end_of_line(COLS) + 1;
+                start = cmp::min(start, buf.len());
+                end = cmp::min(end, buf.len());
+                buf.drain(start..end);
+                cursor.trim_to_max_minus_one(buf.len());
+                lastcommand = command.clone();
+            }
             Rule::insert => {
                 // The next chars will be inserted
                 clear = false;

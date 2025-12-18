@@ -12,6 +12,7 @@ replace			= { "r" }
 replacement		= { &replace ~ ANY ~ (anything_but_escape) }
 remove			= { ASCII_DIGIT* ~ &"x" }
 dd			= { ASCII_DIGIT* ~ &"dd" }
+bigd			= { "D" }
 insert			= { "i" }
 insertstuff		= { &insert ~ ANY ~ (anything_but_escape)+ }
 insertend		= { &insert ~ ANY ~ (anything_but_escape)* ~ escape_char }
@@ -19,7 +20,7 @@ jumpascii		= { "J" }
 querry			= { "?" }
 repeat			= { "." }
 
-quickstuffescaped	= _{ insertend | insertstuff | insert | remove | dd | jumpascii | querry | repeat }
+quickstuffescaped	= _{ insertend | insertstuff | insert | remove | dd | bigd | jumpascii | querry | repeat }
 
 search			= { "/" }
 searchstr		= { (!(escape_char | NEWLINE) ~ ANY)* }
