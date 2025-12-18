@@ -1,3 +1,9 @@
+// Simple keybindings should be put silent rules
+del			= _{ "d" }
+
+// Variable intentionally creating inner token for easy access
+amount			= { ASCII_DIGIT* }
+
 movement		= _{ down | up | left | right | bottom | top | start | end }
 down			= { ASCII_DIGIT* ~ &("j" | "[B") }
 up			= { ASCII_DIGIT* ~ &("k" | "[A") }
@@ -11,6 +17,7 @@ end			= { "$" }
 replace			= { "r" }
 replacement		= { &replace ~ ANY ~ (anything_but_escape) }
 remove			= { ASCII_DIGIT* ~ &"x" }
+remove_left		= { del ~ amount ~ &"h" }
 dd			= { ASCII_DIGIT* ~ &"dd" }
 bigd			= { "D" }
 insert			= { "i" }
@@ -20,7 +27,7 @@ jumpascii		= { "J" }
 querry			= { "?" }
 repeat			= { "." }
 
-quickstuffescaped	= _{ insertend | insertstuff | insert | remove | dd | bigd | jumpascii | querry | repeat }
+quickstuffescaped	= _{ insertend | insertstuff | insert | remove | remove_left | dd | bigd | jumpascii | querry | repeat }
 
 search			= { "/" }
 searchstr		= { (!(escape_char | NEWLINE) ~ ANY)* }

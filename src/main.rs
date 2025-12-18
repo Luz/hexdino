@@ -178,6 +178,18 @@ fn main() -> Result<(), Error> {
                 cursor.trim_to_max_minus_one(buf.len());
                 lastcommand = command.clone();
             }
+            Rule::remove_left => {
+                let amount: usize = cmd.into_inner().as_str().parse().unwrap_or(1);
+                let mut end = cursor.pos();
+                cursor.move_n_left(amount);
+                let mut start = cursor.pos();
+                start = cmp::min(start, buf.len());
+                end = cmp::min(end, buf.len());
+                buf.drain(start..end);
+                // Move cursor if it is out of data
+                cursor.trim_to_max_minus_one(buf.len());
+                lastcommand = command.clone();
+            }
             Rule::dd => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
                 let mut start = cursor.calculate_start_of_line(COLS);
@@ -313,6 +325,8 @@ fn main() -> Result<(), Error> {
             // as silent in src/cmd.pest (by using the "_"-prefix)
             // Maybe this could be fixed upstream?
             Rule::escape
+            | Rule::del
+            | Rule::amount
             | Rule::movement
             | Rule::search
             | Rule::searchstr
