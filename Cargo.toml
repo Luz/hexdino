@@ -1,6 +1,6 @@
 [package]
 name = "hexdino"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Luz"]
 description = "A hex editor with vim like keybindings written in Rust."
 homepage = "https://github.com/Luz/hexdino"
