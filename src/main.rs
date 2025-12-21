@@ -234,6 +234,19 @@ fn main() -> Result<(), Error> {
                 cursor.trim_to_max_minus_one(buf.len());
                 lastcommand = command.clone();
             }
+            Rule::remove_up => {
+                let amount: usize = cmd.into_inner().as_str().parse().unwrap_or(1);
+                // One more as we also want to delete the last character
+                let mut end = cursor.calculate_end_of_line(COLS) + 1;
+                cursor.move_n_up(amount, COLS, buf.len());
+                let mut start = cursor.calculate_start_of_line(COLS);
+                start = cmp::min(start, buf.len());
+                end = cmp::min(end, buf.len());
+                buf.drain(start..end);
+                // Move cursor if it is out of data
+                cursor.trim_to_max_minus_one(buf.len());
+                lastcommand = command.clone();
+            }
             Rule::dd => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
                 let mut start = cursor.calculate_start_of_line(COLS);

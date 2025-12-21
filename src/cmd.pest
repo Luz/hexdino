@@ -20,6 +20,7 @@ remove			= { ASCII_DIGIT* ~ &"x" }
 remove_left		= { del ~ amount ~ &"h" }
 remove_right		= { del ~ amount ~ &"l" }
 remove_down		= { del ~ amount ~ &"j" }
+remove_up		= { del ~ amount ~ &"k" }
 dd			= { ASCII_DIGIT* ~ &"dd" }
 bigd			= { "D" }
 insert			= { "i" }
@@ -29,7 +30,7 @@ jumpascii		= { "J" }
 querry			= { "?" }
 repeat			= { "." }
 
-quickstuffescaped	= _{ insertend | insertstuff | insert | remove | remove_left | remove_right | remove_down | dd | bigd | jumpascii | querry | repeat }
+quickstuffescaped	= _{ insertend | insertstuff | insert | remove | remove_left | remove_right | remove_down | remove_up | dd | bigd | jumpascii | querry | repeat }
 
 search			= { "/" }
 searchstr		= { (!(escape_char | NEWLINE) ~ ANY)* }
