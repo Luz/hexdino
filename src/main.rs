@@ -218,6 +218,22 @@ fn main() -> Result<(), Error> {
                 cursor.set_pos(start);
                 lastcommand = command.clone();
             }
+            Rule::remove_down => {
+                let amount: usize = cmd.into_inner().as_str().parse().unwrap_or(1);
+                let initial = cursor.pos();
+                let mut start = cursor.calculate_start_of_line(COLS);
+                cursor.move_n_down(amount, COLS, buf.len());
+                // One more as we also want to delete the last character
+                let mut end = cursor.calculate_end_of_line(COLS) + 1;
+                start = cmp::min(start, buf.len());
+                end = cmp::min(end, buf.len());
+                buf.drain(start..end);
+                // Cursor should stay at original position
+                cursor.set_pos(initial);
+                // Move cursor if it is out of data
+                cursor.trim_to_max_minus_one(buf.len());
+                lastcommand = command.clone();
+            }
             Rule::dd => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
                 let mut start = cursor.calculate_start_of_line(COLS);
