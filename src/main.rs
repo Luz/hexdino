@@ -181,7 +181,15 @@ fn main() -> Result<(), Error> {
             Rule::remove_left => {
                 let amount: usize = cmd.into_inner().as_str().parse().unwrap_or(1);
                 let mut end = cursor.pos();
-                cursor.move_n_left(amount);
+                // The function move_n_left() in hex mode removes only half of
+                // what one might expect. It feels quite unnatural. Also how
+                // it should be implemented is not fully clear atm. Therefore
+                // we use this remove command always in ascii style.
+                // Not used: cursor.move_n_left(...), Instead: cursor.sub(...)
+                cursor.sub(amount, 0);
+                if !cursor.is_over_ascii() {
+                    infotext.push_str(&format!("Warning, delete is operating on whole bytes.",));
+                }
                 let mut start = cursor.pos();
                 start = cmp::min(start, buf.len());
                 end = cmp::min(end, buf.len());
