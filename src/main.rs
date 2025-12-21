@@ -198,6 +198,26 @@ fn main() -> Result<(), Error> {
                 cursor.trim_to_max_minus_one(buf.len());
                 lastcommand = command.clone();
             }
+            Rule::remove_right => {
+                let amount: usize = cmd.into_inner().as_str().parse().unwrap_or(1);
+                let mut start = cursor.pos();
+                // The function move_n_right() in hex mode removes only half of
+                // what one might expect. It feels quite unnatural. Also how
+                // it should be implemented is not fully clear atm. Therefore
+                // we use this remove command always in ascii style.
+                // Not used: cursor.move_n_right(...), Instead: cursor.add(...)
+                cursor.add(amount, buf.len());
+                if !cursor.is_over_ascii() {
+                    infotext.push_str(&format!("Warning, delete is operating on whole bytes.",));
+                }
+                let mut end = cursor.pos();
+                start = cmp::min(start, buf.len());
+                end = cmp::min(end, buf.len());
+                buf.drain(start..end);
+                // Cursor should stay at original position
+                cursor.set_pos(start);
+                lastcommand = command.clone();
+            }
             Rule::dd => {
                 let amount: usize = cmd.as_str().parse().unwrap_or(1);
                 let mut start = cursor.calculate_start_of_line(COLS);
